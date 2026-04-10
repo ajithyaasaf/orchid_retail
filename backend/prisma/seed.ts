@@ -5,63 +5,42 @@ const prisma = new PrismaClient();
 // ─── Seed Data ─────────────────────────────────────────────────────────────
 
 const CATEGORIES = [
-  { name: "Women's Tops", slug: 'women-tops', description: 'Export-quality tops, blouses, and shirts for women', sortOrder: 1 },
-  { name: "Women's Dresses", slug: 'women-dresses', description: 'Elegant dresses and gowns at surplus prices', sortOrder: 2 },
-  { name: "Women's Bottoms", slug: 'women-bottoms', description: 'Jeans, trousers, skirts, and palazzos', sortOrder: 3 },
-  { name: "Men's Shirts", slug: 'men-shirts', description: 'Premium export-quality shirts for men', sortOrder: 4 },
-  { name: "Men's Trousers", slug: 'men-trousers', description: 'Formal and casual trousers for men', sortOrder: 5 },
-  { name: "Kids' Wear", slug: 'kids-wear', description: 'Comfortable and stylish clothes for children', sortOrder: 6 },
-  { name: 'Accessories', slug: 'accessories', description: 'Bags, scarves, belts, and fashion accessories', sortOrder: 7 },
-  { name: 'Footwear', slug: 'footwear', description: 'Shoes, sandals, and sneakers', sortOrder: 8 },
+  { name: 'New Born', slug: 'new-born', description: 'Clothes and accessories for new born babies', sortOrder: 1 },
+  { name: 'Girls', slug: 'girls', description: 'Dresses, skirts, and tops for girls', sortOrder: 2 },
+  { name: 'Boys', slug: 'boys', description: 'T-shirts, pants, and shorts for boys', sortOrder: 3 },
+  { name: 'Women', slug: 'women', description: 'T-shirts, dresses, and more for women', sortOrder: 4 },
+  { name: 'Mens', slug: 'mens', description: 'T-shirts, pants, and joggers for men', sortOrder: 5 },
 ];
 
 const PRODUCT_TEMPLATES: Record<string, { names: string[]; tags: string[]; priceRange: [number, number]; mrpMultiplier: number }> = {
-  'women-tops': {
-    names: ['Floral Print Blouse', 'Cotton Casual Top', 'Embroidered Peasant Top', 'V-Neck Wrap Top', 'Ruffle Sleeve Blouse', 'Striped Linen Shirt', 'Off-Shoulder Crop Top', 'Button-Down Oxford Shirt', 'Peplum Lace Top', 'Tie-Front Knot Blouse', 'Printed Rayon Tunic', 'Pleated Chiffon Blouse', 'Mandarin Collar Top', 'Polka Dot Pussy Bow Blouse', 'Satin Camisole Top', 'Boho Print Kaftan Top', 'Denim Chambray Shirt', 'Asymmetric Hem Top', 'Gingham Check Blouse', 'Smocked Bodice Top', 'Lace Panel Insert Top', 'Color Block Tunic', 'Pintuck Cotton Blouse', 'Boyfriend Fit Shirt', 'Surplice Wrap Blouse'],
-    tags: ['casual', 'formal', 'party', 'office', 'ethnic'],
-    priceRange: [399, 1299],
+  'new-born': {
+    names: ['Cap', 'Glouses', 'Burp cloth', 'Towels', 'Button jabla', 'Rope jabla', 'Half sleeve jabla set', 'Full sleeve jabla set', 'Sleeveless jabla set', 'Rope frocks', 'Front open frocks', 'Muslin front open sets', 'Muslin frocks', 'Muslin blankets', 'Muslin swaddle', 'Padded undies', 'Hooded towel'],
+    tags: ['newborn', 'baby', 'cotton', 'soft'],
+    priceRange: [199, 699],
+    mrpMultiplier: 2.0,
+  },
+  'girls': {
+    names: ['Frocks', 'Skirts', 'Pants', 'Leggings', 'Tights', 'Palazzo pants', 'Slips', 'Underwear', 'Shorts', '3/4 pants'],
+    tags: ['girls', 'casual', 'party', 'comfortable'],
+    priceRange: [299, 1299],
     mrpMultiplier: 2.5,
   },
-  'women-dresses': {
-    names: ['Floral Maxi Dress', 'A-Line Midi Dress', 'Bodycon Party Dress', 'Shirt Dress with Belt', 'Wrap Around Dress', 'Tiered Boho Dress', 'Fit and Flare Dress', 'Pleated Cocktail Dress', 'Embroidered Kurta Dress', 'Slip Dress Satin', 'Off-Shoulder Maxi Dress', 'Denim Shirt Dress', 'Lace Overlay Dress', 'Smocked Waist Dress', 'Printed Shift Dress', 'Ruffled Hem Midi', 'Halter Neck Dress', 'Blazer Style Dress', 'Sweater Knit Dress', 'Pin Stripe Formal Dress', 'Cutwork Cotton Dress', 'Puff Sleeve Mini Dress', 'Tropical Print Dress', 'Button-Through Dress', 'Gathered Waist Dress'],
-    tags: ['casual', 'party', 'wedding', 'boho', 'formal'],
-    priceRange: [699, 2499],
-    mrpMultiplier: 2.8,
-  },
-  'women-bottoms': {
-    names: ['High-Rise Skinny Jeans', 'Wide Leg Palazzo', 'Cigarette Trousers', 'Pleated Culottes', 'A-Line Midi Skirt', 'Cargo Jogger Pants', 'Paper Bag Waist Trouser', 'Pencil Skirt', 'Bootcut Flare Jeans', 'Linen Straight Pants', 'Printed Palazzo Set', 'Corduroy Trousers', 'Denim Shorts', 'Wrap Front Skirt', 'High-Waist Mom Jeans', 'Harem Pants', 'Layered Tulle Skirt', 'Straight Fit Chinos', 'Embroidered Ankle Pants', 'Knit Ribbed Skirt', 'Distressed Boyfriend Jeans', 'Paperbag Shorts', 'Tiered Maxi Skirt', 'Cropped Flare Jeans', 'Jacquard Wide Leg Pants'],
-    tags: ['casual', 'formal', 'denim', 'ethnic', 'lounge'],
-    priceRange: [499, 1799],
+  'boys': {
+    names: ['T shirts', 'Pants', 'Shorts', 'Underwear', '3/4 pants', 'Loobknit rib pants', 'Fine pants', 'Trunks', 'Half sleeve cord sets', 'Collerd cordset', 'Full sleeve co ords', 'Sleeveless co ords'],
+    tags: ['boys', 'casual', 'sports', 'comfortable'],
+    priceRange: [299, 1199],
     mrpMultiplier: 2.5,
   },
-  'men-shirts': {
-    names: ['Oxford Cotton Shirt', 'Slim Fit Formal Shirt', 'Checked Flannel Shirt', 'Linen Casual Shirt', 'Mandarin Collar Shirt', 'Printed Hawaiian Shirt', 'Denim Shirt', 'Structured Dress Shirt', 'Band Collar Shirt', 'Micro Print Shirt', 'Seersucker Summer Shirt', 'Double Pocket Shirt', 'Stretch Poplin Shirt', 'Chambray Work Shirt', 'French Cuff Shirt', 'Brushed Twill Shirt', 'Cutaway Collar Shirt', 'Short Sleeve Camp Shirt', 'Vertical Stripe Shirt', 'Herringbone Dress Shirt', 'Cuban Collar Shirt', 'Oversized Relaxed Shirt', 'Dobby Weave Shirt', 'Gingham Button-Down', 'Garment Dyed Shirt'],
-    tags: ['formal', 'casual', 'party', 'office', 'summer'],
-    priceRange: [499, 1499],
-    mrpMultiplier: 2.5,
-  },
-  'men-trousers': {
-    names: ['Slim Fit Chinos', 'Formal Pleated Trousers', 'Cargo Pants', 'Jogger Pants', 'Straight Fit Jeans', 'Linen Drawstring Pants', 'Tailored Wool Trousers', 'Stretch Cotton Pants', 'Flat Front Dress Pants', 'Corduroy Trousers', 'Relaxed Fit Jeans', 'Ankle-Length Trousers', 'Track Pants', 'Bermuda Shorts', 'Cropped Pants', 'Selvedge Denim Jeans', 'Twill Work Pants', 'Pinstripe Trousers', 'Tech Fabric Pants', 'Pleated Wide-Leg Pants', 'Brushed Fleece Joggers', 'Tapered Fit Trousers', 'Patchwork Denim Jeans', 'Drawstring Linen Shorts', 'Slub Cotton Pants'],
-    tags: ['formal', 'casual', 'denim', 'sports', 'lounge'],
-    priceRange: [599, 1699],
-    mrpMultiplier: 2.5,
-  },
-  'kids-wear': {
-    names: ['Printed T-Shirt Set', 'Dungaree with T-Shirt', 'Floral Frock', 'Shorts & Tee Combo', 'Embroidered Kurta Set', 'Striped Polo T-Shirt', 'Denim Jacket Set', 'Tutu Dress', 'Cargo Shorts Set', 'Leggings & Top Set', 'Animal Print Romper', 'Party Wear Dress', 'Track Suit', 'Cotton Pajama Set', 'Checked Shirt & Shorts', 'Ruffled Tunic Set', 'Fleece Hoodie Set', 'Ethnic Wear Set', 'Rain Jacket & Pants', 'Sequin Work Dress', 'Sports Jersey Set', 'Knit Cardigan Set', 'Printed Jumpsuit', 'Bow Detail Dress', 'Camouflage Cargo Set'],
-    tags: ['casual', 'party', 'ethnic', 'sleepwear', 'sports'],
-    priceRange: [349, 1099],
-    mrpMultiplier: 3.0,
-  },
-  'accessories': {
-    names: ['Printed Silk Scarf', 'Leather Crossbody Bag', 'Woven Tote Bag', 'Statement Belt', 'Beanie Cap', 'Sunglasses Classic', 'Pearl Earrings Set', 'Canvas Backpack', 'Silk Hair Scrunchie Set', 'Leather Wallet', 'Charm Bracelet', 'Emboidered Clutch', 'Cotton Bandana Set', 'Bucket Hat', 'Layered Necklace', 'Keychain Pouch', 'Geometric Drop Earrings', 'Mini Sling Bag', 'Hair Claw Clip Set', 'Printed Phone Pouch', 'Coin Purse', 'Straw Beach Bag', 'Metal Bangle Set', 'Travel Wash Bag', 'Reversible Belt'],
-    tags: ['bags', 'jewellery', 'hair', 'travel', 'fashion'],
-    priceRange: [199, 999],
-    mrpMultiplier: 3.0,
-  },
-  'footwear': {
-    names: ['Canvas Sneakers', 'Leather Loafers', 'Strappy Block Heels', 'Flat Sandals', 'Running Shoes', 'Ankle Boots', 'Slide Slippers', 'Oxford Brogues', 'Platform Wedges', 'Kolhapuri Chappals', 'High-Top Sneakers', 'Ballet Flats', 'Espadrilles', 'Chelsea Boots', 'Gladiator Sandals', 'Mule Heels', 'Boat Shoes', 'Flip Flops', 'Kitten Heel Pumps', 'Chunky Dad Sneakers', 'Woven Juttis', 'Cork Sole Sandals', 'Peep Toe Heels', 'Slip-On Loafers', 'Trail Hiking Shoes'],
-    tags: ['casual', 'formal', 'sports', 'party', 'ethnic'],
+  'women': {
+    names: ['T SHIRTS', 'full pants', 'Shorts', 'Leggings', '3/4 pants', 'Long polos', 'Feeding dresses', 'Dresses', 'Underwear', 'Tights'],
+    tags: ['women', 'casual', 'formal', 'ethnic'],
     priceRange: [399, 1999],
+    mrpMultiplier: 2.5,
+  },
+  'mens': {
+    names: ['T shirts', 'Shorts', 'Full pants', 'Joggers', 'Underwear', 'Trunks'],
+    tags: ['mens', 'casual', 'sports', 'formal'],
+    priceRange: [399, 1799],
     mrpMultiplier: 2.5,
   },
 };
@@ -97,9 +76,29 @@ function generateSlug(name: string, index: number): string {
   return `${name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+$/, '')}-${index}`;
 }
 
-// Placeholder image URLs (will be replaced with Cloudinary URLs later)
+// Curated Unsplash fashion image URLs
+const UNSPLASH_IMAGES = [
+  'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=600&h=800&fit=crop', // yellow dress
+  'https://images.unsplash.com/photo-1434389678369-1822d54e50dc?w=600&h=800&fit=crop', // jacket
+  'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=600&h=800&fit=crop', // denim
+  'https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=600&h=800&fit=crop', // white dress
+  'https://images.unsplash.com/photo-1509319117193-57bab727e09d?w=600&h=800&fit=crop', // green top
+  'https://images.unsplash.com/photo-1539008835657-9e8e9680c956?w=600&h=800&fit=crop', // woman coat
+  'https://images.unsplash.com/photo-1550614000-4b95d41b6375?w=600&h=800&fit=crop', // formal shirt
+  'https://images.unsplash.com/photo-1559551409-dadc959f76b8?w=600&h=800&fit=crop', // man shirt
+  'https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=600&h=800&fit=crop', // men formal
+  'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=600&h=800&fit=crop', // leather jacket
+  'https://images.unsplash.com/photo-1618244972963-dbee1a7edc95?w=600&h=800&fit=crop', // kid wear
+  'https://images.unsplash.com/photo-1584370848010-d7fe6bc767eb?w=600&h=800&fit=crop', // jeans
+  'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=600&h=800&fit=crop', // shoes
+  'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=600&h=800&fit=crop', // casual shoes
+];
+
+// Temporary Unsplash image URLs (will be replaced with Cloudinary URLs later)
 function generateImageUrls(category: string, index: number): string[] {
-  const base = `https://placehold.co/600x800/f5f5f5/E8007A?text=${encodeURIComponent(category.replace('-', '+'))}+${index}`;
+  // Use index to deterministically pick an image from the array
+  const imgIndex = index % UNSPLASH_IMAGES.length;
+  const base = UNSPLASH_IMAGES[imgIndex];
   return [base, base, base, base];
 }
 
@@ -126,7 +125,7 @@ async function main() {
   }
 
   // Create products with variants
-  console.log('📦 Creating 200 products with variants...');
+  console.log('📦 Creating products with variants...');
   let productCount = 0;
 
   for (const [categorySlug, template] of Object.entries(PRODUCT_TEMPLATES)) {
@@ -188,7 +187,7 @@ async function main() {
         },
       });
 
-      if (productCount % 50 === 0) {
+      if (productCount % 10 === 0) {
         console.log(`  Created ${productCount} products...`);
       }
     }

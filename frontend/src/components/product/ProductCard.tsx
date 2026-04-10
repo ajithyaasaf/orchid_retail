@@ -85,7 +85,7 @@ export default function ProductCard({
       {/* Image */}
       <div className="relative aspect-[3/4] bg-surface rounded-xl overflow-hidden mb-3">
         <img
-          src={images[0] || 'https://placehold.co/450x600/f5f5f5/E8007A?text=Orchid'}
+          src={images[0] || process.env.NEXT_PUBLIC_DEFAULT_IMAGE_URL || 'https://placehold.co/450x600/f5f5f5/E8007A?text=Orchid'}
           alt={name}
           className={cn(
             'w-full h-full object-cover transition-transform duration-500',
