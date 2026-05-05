@@ -11,6 +11,7 @@ router.get('/', async (req: Request, res: Response) => {
       limit = '20',
       category,
       search,
+      ids,
       minPrice,
       maxPrice,
       sizes,
@@ -28,6 +29,18 @@ router.get('/', async (req: Request, res: Response) => {
 
     // Build where clause
     const where: Record<string, unknown> = { isActive: true };
+
+    if (ids !== undefined && ids !== '') {
+      // Sanitise: trim whitespace, remove blank segments, deduplicate
+      const idList = [...new Set(
+        (ids as string).split(',').map(id => id.trim()).filter(id => id.length > 0)
+      )];
+      // If the caller sent an ids param but all entries were blank, return nothing
+      if (idList.length === 0) {
+        return res.json({ success: true, data: [], pagination: { page: 1, limit: parseInt(limit as string), total: 0, totalPages: 0 } });
+      }
+      where.id = { in: idList };
+    }
 
     if (category) {
       where.category = { slug: category as string };
