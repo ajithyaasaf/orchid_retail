@@ -1,20 +1,19 @@
 import { Router, Request, Response } from 'express';
-import crypto from 'crypto';
 import prisma from '../lib/prisma';
+import { razorpayService } from '../services/razorpayService';
 
 const router = Router();
 
-// PhonePe configuration (from env)
-const PHONEPE_MERCHANT_ID = process.env.PHONEPE_MERCHANT_ID || 'MERCHANT_TEST';
-const PHONEPE_SALT_KEY = process.env.PHONEPE_SALT_KEY || 'test_salt_key';
-const PHONEPE_SALT_INDEX = process.env.PHONEPE_SALT_INDEX || '1';
-const PHONEPE_BASE_URL = process.env.PHONEPE_BASE_URL || 'https://api-preprod.phonepe.com/apis/pg-sandbox';
-const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
-
-// ─── POST /api/payments/initiate — Create PhonePe payment ────────────────────
-router.post('/initiate', async (req: Request, res: Response) => {
+// ─── POST /api/payments/create-order — Create Razorpay order ─────────────────
+// Called by frontend AFTER our DB order is created. Returns Razorpay order ID
+// for the checkout popup.
+router.post('/create-order', async (req: Request, res: Response) => {
   try {
     const { orderId } = req.body;
+
+    if (!orderId) {
+      return res.status(400).json({ success: false, error: 'Missing orderId' });
+    }
 
     const order = await prisma.order.findUnique({
       where: { id: orderId },
@@ -25,96 +24,170 @@ router.post('/initiate', async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, error: 'Order not found' });
     }
 
+    // Idempotency: if we already have a Razorpay order ID, return it
+    if (order.razorpayOrderId) {
+      return res.json({
+        success: true,
+        data: {
+          razorpayOrderId: order.razorpayOrderId,
+          amount: Math.round(order.total * 100),
+          currency: 'INR',
+          keyId: razorpayService.getKeyId(),
+        },
+      });
+    }
+
     if (order.paymentStatus === 'paid') {
       return res.status(400).json({ success: false, error: 'Order is already paid' });
     }
 
-    const merchantTransactionId = `ORD_${order.id}_${Date.now()}`;
+    // CRITICAL: Amount is always computed server-side from our DB — never trust client
+    const amountInPaise = Math.round(order.total * 100);
 
-    // PhonePe payload
-    const payload = {
-      merchantId: PHONEPE_MERCHANT_ID,
-      merchantTransactionId,
-      merchantUserId: order.userId,
-      amount: Math.round(order.total * 100), // In paise
-      redirectUrl: `${FRONTEND_URL}/order-success?orderId=${order.id}`,
-      redirectMode: 'REDIRECT',
-      callbackUrl: `${process.env.BACKEND_URL || 'http://localhost:5000'}/api/payments/webhook`,
-      paymentInstrument: { type: 'PAY_PAGE' },
-    };
-
-    const base64Payload = Buffer.from(JSON.stringify(payload)).toString('base64');
-    const checksum = crypto
-      .createHash('sha256')
-      .update(`${base64Payload}/pg/v1/pay${PHONEPE_SALT_KEY}`)
-      .digest('hex');
-    const xVerify = `${checksum}###${PHONEPE_SALT_INDEX}`;
-
-    // In production, make actual API call to PhonePe
-    // For now, store the transaction ID and return a redirect URL
-    await prisma.order.update({
-      where: { id: orderId },
-      data: { merchantTransactionId },
+    const razorpayOrder = await razorpayService.createOrder({
+      amountInPaise,
+      receipt: order.orderNumber,
+      notes: {
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+      },
     });
 
-    // Simulated response for dev (in production, call PhonePe API)
-    const redirectUrl = `${PHONEPE_BASE_URL}/pg/v1/pay`;
+    // Store the Razorpay order ID on our order
+    await prisma.order.update({
+      where: { id: orderId },
+      data: {
+        razorpayOrderId: razorpayOrder.id,
+        paymentMethod: 'razorpay',
+      },
+    });
 
     res.json({
       success: true,
       data: {
-        redirectUrl,
-        merchantTransactionId,
-        // Include these for frontend debugging only
-        _dev: process.env.NODE_ENV === 'development' ? { base64Payload, xVerify } : undefined,
+        razorpayOrderId: razorpayOrder.id,
+        amount: amountInPaise,
+        currency: razorpayOrder.currency,
+        keyId: razorpayService.getKeyId(),
       },
     });
   } catch (error) {
-    console.error('Error initiating payment:', error);
-    res.status(500).json({ success: false, error: 'Failed to initiate payment' });
+    console.error('[Payment] Error creating Razorpay order:', error);
+    res.status(500).json({ success: false, error: 'Failed to create payment order' });
   }
 });
 
-// ─── POST /api/payments/webhook — PhonePe webhook callback ───────────────────
-router.post('/webhook', async (req: Request, res: Response) => {
+// ─── POST /api/payments/verify — Verify payment after checkout popup ─────────
+// Called by frontend immediately after Razorpay popup success callback.
+// Verifies HMAC signature, then updates order + deducts stock atomically.
+router.post('/verify', async (req: Request, res: Response) => {
   try {
-    const { response: encodedResponse } = req.body;
+    const { razorpayOrderId, razorpayPaymentId, razorpaySignature, orderId } = req.body;
 
-    if (!encodedResponse) {
-      return res.status(400).json({ success: false, error: 'Missing response payload' });
+    if (!razorpayOrderId || !razorpayPaymentId || !razorpaySignature || !orderId) {
+      return res.status(400).json({ success: false, error: 'Missing payment verification fields' });
     }
 
-    // Verify checksum
-    const checksum = crypto
-      .createHash('sha256')
-      .update(`${encodedResponse}${PHONEPE_SALT_KEY}`)
-      .digest('hex');
-    const expectedChecksum = `${checksum}###${PHONEPE_SALT_INDEX}`;
-    const receivedChecksum = req.headers['x-verify'] as string;
+    // Step 1: Verify signature BEFORE any DB writes
+    const isValid = razorpayService.verifyPaymentSignature({
+      razorpayOrderId,
+      razorpayPaymentId,
+      razorpaySignature,
+    });
 
-    if (expectedChecksum !== receivedChecksum) {
-      console.error('Checksum verification failed');
-      return res.status(400).json({ success: false, error: 'Invalid checksum' });
+    if (!isValid) {
+      console.error('[Payment] Signature verification failed for order:', orderId);
+      return res.status(400).json({ success: false, error: 'Payment verification failed' });
     }
 
-    // Decode response
-    const decodedResponse = JSON.parse(Buffer.from(encodedResponse, 'base64').toString());
-    const { merchantTransactionId, code, transactionId } = decodedResponse.data || decodedResponse;
-
-    const order = await prisma.order.findFirst({
-      where: { merchantTransactionId },
+    // Step 2: Load order
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
       include: { items: true },
     });
 
     if (!order) {
-      console.error('Order not found for transaction:', merchantTransactionId);
       return res.status(404).json({ success: false, error: 'Order not found' });
     }
 
-    if (code === 'PAYMENT_SUCCESS') {
-      // Payment succeeded — deduct stock, update status
+    // Idempotency guard: skip if already paid (webhook may have arrived first)
+    if (order.paymentStatus === 'paid') {
+      return res.json({ success: true, data: { orderId: order.id, status: 'already_paid' } });
+    }
+
+    // Step 3: Atomic stock deduction + order update
+    await prisma.$transaction(async (tx) => {
+      for (const item of order.items) {
+        await tx.variant.update({
+          where: { id: item.variantId },
+          data: {
+            stock: { decrement: item.quantity },
+            reservedStock: { decrement: item.quantity },
+          },
+        });
+      }
+
+      await tx.order.update({
+        where: { id: order.id },
+        data: {
+          paymentStatus: 'paid',
+          orderStatus: 'confirmed',
+          razorpayPaymentId,
+          razorpaySignature,
+          stockDeducted: true,
+          stockReserved: false,
+        },
+      });
+    });
+
+    res.json({ success: true, data: { orderId: order.id, status: 'paid' } });
+  } catch (error) {
+    console.error('[Payment] Error verifying payment:', error);
+    res.status(500).json({ success: false, error: 'Payment verification failed' });
+  }
+});
+
+// ─── POST /api/payments/webhook — Razorpay webhook (server-to-server) ────────
+// Backup reconciliation. Handles `payment.captured` and `payment.failed`.
+// Both this and /verify are idempotent — whichever arrives first wins.
+router.post('/webhook', async (req: Request, res: Response) => {
+  try {
+    const signature = req.headers['x-razorpay-signature'] as string;
+    const rawBody = JSON.stringify(req.body);
+
+    // Verify webhook signature
+    if (!signature || !razorpayService.verifyWebhookSignature(rawBody, signature)) {
+      console.error('[Webhook] Signature verification failed');
+      return res.status(400).json({ success: false });
+    }
+
+    const event = req.body.event;
+    const payload = req.body.payload?.payment?.entity;
+
+    if (!payload) {
+      return res.status(200).json({ success: true }); // Acknowledge unknown events
+    }
+
+    const razorpayOrderId = payload.order_id;
+    const razorpayPaymentId = payload.id;
+
+    const order = await prisma.order.findFirst({
+      where: { razorpayOrderId },
+      include: { items: true },
+    });
+
+    if (!order) {
+      console.warn('[Webhook] Order not found for razorpayOrderId:', razorpayOrderId);
+      return res.status(200).json({ success: true }); // Acknowledge but ignore
+    }
+
+    if (event === 'payment.captured') {
+      // Skip if already paid (verify endpoint handled it first)
+      if (order.paymentStatus === 'paid') {
+        return res.status(200).json({ success: true });
+      }
+
       await prisma.$transaction(async (tx) => {
-        // Deduct stock for each item
         for (const item of order.items) {
           await tx.variant.update({
             where: { id: item.variantId },
@@ -125,64 +198,78 @@ router.post('/webhook', async (req: Request, res: Response) => {
           });
         }
 
-        // Update order
         await tx.order.update({
           where: { id: order.id },
           data: {
             paymentStatus: 'paid',
             orderStatus: 'confirmed',
-            gatewayTransactionId: transactionId,
+            razorpayPaymentId,
             stockDeducted: true,
             stockReserved: false,
           },
         });
       });
-    } else {
-      // Payment failed — release reserved stock
-      await prisma.$transaction(async (tx) => {
-        for (const item of order.items) {
-          await tx.variant.update({
-            where: { id: item.variantId },
-            data: { reservedStock: { decrement: item.quantity } },
-          });
-        }
+    } else if (event === 'payment.failed') {
+      // Release reserved stock
+      if (order.paymentStatus !== 'paid') {
+        await prisma.$transaction(async (tx) => {
+          for (const item of order.items) {
+            await tx.variant.update({
+              where: { id: item.variantId },
+              data: { reservedStock: { decrement: item.quantity } },
+            });
+          }
 
-        await tx.order.update({
-          where: { id: order.id },
-          data: {
-            paymentStatus: 'failed',
-            orderStatus: 'cancelled',
-            gatewayTransactionId: transactionId,
-            stockReserved: false,
-          },
+          await tx.order.update({
+            where: { id: order.id },
+            data: {
+              paymentStatus: 'failed',
+              orderStatus: 'cancelled',
+              razorpayPaymentId,
+              stockReserved: false,
+            },
+          });
         });
-      });
+      }
     }
 
-    res.json({ success: true });
+    res.status(200).json({ success: true });
   } catch (error) {
-    console.error('Error processing webhook:', error);
-    res.status(500).json({ success: false, error: 'Webhook processing failed' });
+    console.error('[Webhook] Error processing webhook:', error);
+    res.status(500).json({ success: false });
   }
 });
 
-// ─── GET /api/payments/status/:merchantTransactionId — Check payment status ──
-router.get('/status/:merchantTransactionId', async (req: Request, res: Response) => {
+// ─── GET /api/payments/status/:orderId — Check payment status ────────────────
+router.get('/status/:orderId', async (req: Request, res: Response) => {
   try {
-    const order = await prisma.order.findFirst({
-      where: { merchantTransactionId: req.params.merchantTransactionId },
-      select: { id: true, paymentStatus: true, orderStatus: true, orderNumber: true },
+    const order = await prisma.order.findUnique({
+      where: { id: req.params.orderId },
+      select: {
+        id: true,
+        orderNumber: true,
+        paymentStatus: true,
+        orderStatus: true,
+        total: true,
+        razorpayOrderId: true,
+        razorpayPaymentId: true,
+      },
     });
 
     if (!order) {
-      return res.status(404).json({ success: false, error: 'Transaction not found' });
+      return res.status(404).json({ success: false, error: 'Order not found' });
     }
 
     res.json({ success: true, data: order });
   } catch (error) {
-    console.error('Error checking payment status:', error);
+    console.error('[Payment] Error checking payment status:', error);
     res.status(500).json({ success: false, error: 'Failed to check status' });
   }
+});
+
+// ─── GET /api/payments/key — Return public Razorpay key for frontend ─────────
+router.get('/key', (_req: Request, res: Response) => {
+  res.json({ success: true, data: { keyId: razorpayService.getKeyId() } });
 });
 
 export default router;

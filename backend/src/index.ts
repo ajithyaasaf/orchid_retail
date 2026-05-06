@@ -8,6 +8,8 @@ import orderRoutes from './routes/orders';
 import reviewRoutes from './routes/reviews';
 import adminRoutes from './routes/admin';
 import paymentRoutes from './routes/payments';
+import addressRoutes from './routes/addresses';
+import couponRoutes from './routes/coupons';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -33,6 +35,8 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/addresses', addressRoutes);
+app.use('/api/coupons', couponRoutes);
 
 // ─── Global Error Handler ────────────────────────────────────────────────────
 app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {

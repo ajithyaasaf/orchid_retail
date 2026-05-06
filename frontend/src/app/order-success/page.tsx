@@ -68,7 +68,7 @@ function OrderSuccessContent() {
             <CheckCircle size={40} className="text-success" />
           </div>
           <h1 className="text-2xl font-bold text-foreground mb-2">Order Confirmed! 🎉</h1>
-          <p className="text-muted mb-6">Thank you for shopping with Orchid Export Surplus Store</p>
+          <p className="text-muted mb-6">Thank you for shopping with Orchid</p>
         </>
       ) : isPending ? (
         <>

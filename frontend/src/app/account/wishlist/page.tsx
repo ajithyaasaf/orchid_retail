@@ -66,6 +66,10 @@ export default function WishlistPage() {
 
     // All stored IDs were corrupted/empty — treat as empty
     if (validIds.length === 0) {
+      if (items.length > 0) {
+        // Aggressively clear corrupted state so user isn't stuck
+        useWishlistStore.getState().clear();
+      }
       setProducts([]);
       return;
     }

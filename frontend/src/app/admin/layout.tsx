@@ -2,19 +2,22 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Package, ShoppingCart, FolderOpen, Tag, BarChart3 } from 'lucide-react';
+import { LayoutDashboard, Package, ShoppingCart, FolderOpen, Tag, Users, Layers } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const NAV = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/products', label: 'Products', icon: Package },
   { href: '/admin/orders', label: 'Orders', icon: ShoppingCart },
+  { href: '/admin/customers', label: 'Customers', icon: Users },
   { href: '/admin/categories', label: 'Categories', icon: FolderOpen },
+  { href: '/admin/collections', label: 'Collections', icon: Layers },
   { href: '/admin/coupons', label: 'Coupons', icon: Tag },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const isActive = (href: string) => href === '/admin' ? pathname === href : pathname.startsWith(href);
 
   return (
     <div className="min-h-screen bg-surface">
@@ -37,7 +40,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 href={item.href}
                 className={cn(
                   'flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
-                  pathname === item.href ? 'bg-primary text-white' : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  isActive(item.href) ? 'bg-primary text-white' : 'text-gray-400 hover:text-white hover:bg-white/5'
                 )}
               >
                 <item.icon size={18} />
@@ -51,14 +54,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </aside>
 
         {/* Mobile nav */}
-        <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-border flex">
-          {NAV.slice(0, 4).map(item => (
+        <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-border flex overflow-x-auto">
+          {NAV.map(item => (
             <Link
               key={item.href}
               href={item.href}
               className={cn(
-                'flex-1 flex flex-col items-center py-2.5 text-[10px] font-medium transition-colors',
-                pathname === item.href ? 'text-primary' : 'text-muted'
+                'flex-1 min-w-[64px] flex flex-col items-center py-2.5 text-[10px] font-medium transition-colors',
+                isActive(item.href) ? 'text-primary' : 'text-muted'
               )}
             >
               <item.icon size={18} />

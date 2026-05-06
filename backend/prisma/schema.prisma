@@ -30,22 +30,23 @@ model Category {
 // ─── Product ─────────────────────────────────────────────────────────────────
 
 model Product {
-  id           String    @id @default(cuid())
+  id           String              @id @default(cuid())
   name         String
-  slug         String    @unique
+  slug         String              @unique
   description  String
   categoryId   String
-  category     Category  @relation(fields: [categoryId], references: [id])
-  images       String[]  // Array of image URLs
-  tags         String[]  // Tags for filtering
-  exportBadge  Boolean   @default(false)
-  isFeatured   Boolean   @default(false)
-  isActive     Boolean   @default(true)
+  category     Category            @relation(fields: [categoryId], references: [id])
+  images       String[]            // Array of image URLs
+  tags         String[]            // Tags for filtering
+  exportBadge  Boolean             @default(false)
+  isFeatured   Boolean             @default(false)
+  isActive     Boolean             @default(true)
   variants     Variant[]
   reviews      Review[]
   orderItems   OrderItem[]
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  collections  CollectionProduct[]
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
 
   @@index([categoryId])
   @@index([slug])
@@ -80,17 +81,18 @@ model Variant {
 // ─── User ────────────────────────────────────────────────────────────────────
 
 model User {
-  id        String    @id @default(cuid())
-  name      String
-  email     String    @unique
-  phone     String?
-  password  String?   // Hashed, null for social login
-  role      String    @default("customer") // "admin" | "customer"
-  addresses Address[]
-  orders    Order[]
-  reviews   Review[]
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id           String        @id @default(cuid())
+  name         String
+  email        String        @unique
+  phone        String?
+  password     String?       // Hashed, null for social login
+  role         String        @default("customer") // "admin" | "customer"
+  addresses    Address[]
+  orders       Order[]
+  reviews      Review[]
+  couponUsages CouponUsage[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 }
 
 // ─── Address ─────────────────────────────────────────────────────────────────
@@ -136,9 +138,10 @@ model Order {
   paymentStatus          String      @default("pending")
   paymentMethod          String?
 
-  // PhonePe
-  merchantTransactionId  String?     @unique
-  gatewayTransactionId   String?
+  // Razorpay
+  razorpayOrderId        String?     @unique
+  razorpayPaymentId      String?
+  razorpaySignature      String?
 
   // Stock tracking
   stockReserved          Boolean     @default(false)
@@ -157,7 +160,7 @@ model Order {
   @@index([orderNumber])
   @@index([orderStatus])
   @@index([paymentStatus])
-  @@index([merchantTransactionId])
+  @@index([razorpayOrderId])
 }
 
 // ─── Order Item ──────────────────────────────────────────────────────────────
@@ -205,17 +208,61 @@ model Review {
 // ─── Coupon ──────────────────────────────────────────────────────────────────
 
 model Coupon {
-  id          String   @id @default(cuid())
-  code        String   @unique
-  type        String   // "flat" | "percentage"
+  id          String        @id @default(cuid())
+  code        String        @unique
+  type        String        // "flat" | "percentage"
   value       Float
   minOrder    Float?
   maxDiscount Float?
-  usageLimit  Int?
-  usedCount   Int      @default(0)
+  usageLimit  Int?          // Global usage limit
+  usedCount   Int           @default(0)
   validFrom   DateTime
   validUntil  DateTime
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  isActive    Boolean       @default(true)
+  usages      CouponUsage[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+// ─── Coupon Usage (Per-User Tracking) ────────────────────────────────────────
+
+model CouponUsage {
+  id       String   @id @default(cuid())
+  couponId String
+  coupon   Coupon   @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orderId  String
+  usedAt   DateTime @default(now())
+
+  @@unique([couponId, userId]) // One use per user per coupon
+  @@index([couponId])
+  @@index([userId])
+}
+
+// ─── Collection (Curated product groups) ─────────────────────────────────────
+
+model Collection {
+  id          String              @id @default(cuid())
+  name        String
+  slug        String              @unique
+  description String?
+  imageUrl    String?
+  isActive    Boolean             @default(true)
+  sortOrder   Int                 @default(0)
+  products    CollectionProduct[]
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+}
+
+model CollectionProduct {
+  collectionId String
+  productId    String
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  product      Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sortOrder    Int        @default(0)
+
+  @@id([collectionId, productId])
+  @@index([collectionId])
+  @@index([productId])
 }

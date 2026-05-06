@@ -36,8 +36,13 @@ export const useWishlistStore = create<WishlistStore>()(
       
       removeMany: (productIds) => {
         if (!productIds || productIds.length === 0) return;
-        const setIds = new Set(productIds);
-        set({ items: get().items.filter(id => !setIds.has(id)) });
+        const setIds = new Set(productIds.map(id => typeof id === 'string' ? id.trim() : id));
+        set({ 
+          items: get().items.filter(id => {
+            const cleanId = typeof id === 'string' ? id.trim() : id;
+            return !setIds.has(cleanId);
+          }) 
+        });
       },
 
       isWishlisted: (productId) => {
