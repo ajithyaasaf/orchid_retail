@@ -20,7 +20,7 @@ const NAV = [
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user } = useAuthStore();
+  const { user, isLoading } = useAuthStore();
   
   const isSuper = user?.role === 'super_admin';
 
@@ -40,8 +40,22 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }, [pathname, isSuper, user, router]);
 
   const isActive = (href: string) => href === '/admin' ? pathname === href : pathname.startsWith(href);
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.push('/login?redirect=/admin');
+    }
+  }, [user, isLoading, router]);
 
-  if (!user) return null; // Let middleware handle guest redirection
+  if (isLoading || !user) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-surface">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+          <p className="text-sm text-muted font-medium animate-pulse">Verifying access...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-surface">
