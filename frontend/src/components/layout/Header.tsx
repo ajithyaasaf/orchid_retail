@@ -219,7 +219,7 @@ export default function Header() {
                         <p className="text-xs text-muted">Signed in as</p>
                         <p className="text-sm font-bold truncate">{user.email}</p>
                       </div>
-                      {user.role === 'admin' && (
+                      {(user.role === 'admin' || user.role === 'super_admin') && (
                         <>
                           <Link 
                             href="/admin" 
@@ -297,7 +297,7 @@ export default function Header() {
                 </Link>
               ))}
               <hr className="my-3 border-border" />
-              {user && user.role === 'admin' && (
+              {user && (user.role === 'admin' || user.role === 'super_admin') && (
                 <Link
                   href="/admin"
                   className="block px-4 py-3 text-sm font-bold text-primary hover:bg-primary/5 rounded-lg transition-colors"
