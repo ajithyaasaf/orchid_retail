@@ -182,16 +182,18 @@ export default function CheckoutPage() {
         theme: { color: '#E8007A' },
         handler: async (response: any) => {
           try {
+            setLoading(true);
             await paymentApi.verify({
               razorpayOrderId: response.razorpay_order_id,
               razorpayPaymentId: response.razorpay_payment_id,
               razorpaySignature: response.razorpay_signature,
               orderId: dbOrder.id,
             });
-            clearCart();
-            window.location.href = `/order-success?orderId=${dbOrder.id}`;
-          } catch {
-            // Webhook backup handles this
+          } catch (err) {
+            console.error('Verification error:', err);
+            // Even if verification fails (e.g. network blip), we trust the frontend success 
+            // for UX and let the webhook handle the DB reconciliation.
+          } finally {
             clearCart();
             window.location.href = `/order-success?orderId=${dbOrder.id}`;
           }

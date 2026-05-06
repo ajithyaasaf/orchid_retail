@@ -42,7 +42,11 @@ async function fetchApi<T>(endpoint: string, options: FetchOptions = {}): Promis
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ error: 'Request failed' }));
-    throw new Error(error.error || `HTTP ${response.status}`);
+    const errorMessage = error.error || `HTTP ${response.status}`;
+    
+    // If we get an unauthorized error, we just throw it. 
+    // The calling code (like authStore) should handle the logout/cleanup.
+    throw new Error(errorMessage);
   }
   return response.json();
 }

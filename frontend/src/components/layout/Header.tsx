@@ -23,6 +23,7 @@ export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isAccountOpen, setIsAccountOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isMegaMenuOpen, setIsMegaMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -189,54 +190,73 @@ export default function Header() {
 
             {/* Account */}
             {mounted && user ? (
-              <div className="relative group hidden md:block">
-                <Link 
-                  href="/account/profile" 
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface hover:bg-primary-light transition-colors"
+              <div className="relative hidden md:block">
+                <button 
+                  onClick={() => setIsAccountOpen(!isAccountOpen)}
+                  className={cn(
+                    "flex items-center gap-2 px-3 py-1.5 rounded-full transition-all duration-200",
+                    isAccountOpen ? "bg-primary text-white shadow-lg shadow-primary/20" : "bg-surface hover:bg-primary-light"
+                  )}
                 >
-                  <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-white text-[10px] font-bold">
+                  <div className={cn(
+                    "w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold transition-colors",
+                    isAccountOpen ? "bg-white text-primary" : "bg-primary text-white"
+                  )}>
                     {user.name.charAt(0).toUpperCase()}
                   </div>
-                  <span className="text-xs font-semibold text-foreground group-hover:text-primary transition-colors">
+                  <span className={cn("text-xs font-semibold", isAccountOpen ? "text-white" : "text-foreground")}>
                     {user.name.split(' ')[0]}
                   </span>
-                  <ChevronDown size={14} className="text-muted group-hover:text-primary transition-transform group-hover:rotate-180" />
-                </Link>
+                  <ChevronDown size={14} className={cn("transition-transform duration-200", isAccountOpen ? "rotate-180 text-white" : "text-muted")} />
+                </button>
 
                 {/* Account Dropdown */}
-                <div className="absolute top-full right-0 mt-1 w-48 bg-white shadow-xl rounded-xl border border-border/50 py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                  {user.role === 'admin' && (
-                    <>
-                      <Link 
-                        href="/admin" 
-                        className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-primary hover:bg-primary/5 transition-colors"
-                      >
-                        <span className="text-lg">🛡️</span>
-                        Admin Dashboard
+                {isAccountOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setIsAccountOpen(false)} />
+                    <div className="absolute top-full right-0 mt-2 w-56 bg-white shadow-2xl rounded-2xl border border-border/50 py-3 animate-in fade-in zoom-in-95 duration-200 z-50">
+                      <div className="px-4 py-2 mb-2 border-b border-border/50">
+                        <p className="text-xs text-muted">Signed in as</p>
+                        <p className="text-sm font-bold truncate">{user.email}</p>
+                      </div>
+                      {user.role === 'admin' && (
+                        <>
+                          <Link 
+                            href="/admin" 
+                            onClick={() => setIsAccountOpen(false)}
+                            className="flex items-center gap-3 px-4 py-2.5 text-sm font-bold text-primary hover:bg-primary/5 transition-colors"
+                          >
+                            <span className="text-lg">🛡️</span>
+                            Admin Dashboard
+                          </Link>
+                          <div className="mx-4 my-1 border-t border-border/50" />
+                        </>
+                      )}
+                      <Link href="/account/profile" onClick={() => setIsAccountOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-surface hover:text-primary transition-colors">
+                        <User size={16} /> My Profile
                       </Link>
-                      <div className="mx-2 my-1 border-t border-border/50" />
-                    </>
-                  )}
-                  <Link href="/account/profile" className="block px-4 py-2 text-sm text-foreground hover:bg-surface hover:text-primary transition-colors">
-                    My Profile
-                  </Link>
-                  <Link href="/account/orders" className="block px-4 py-2 text-sm text-foreground hover:bg-surface hover:text-primary transition-colors">
-                    My Orders
-                  </Link>
-                  <Link href="/account/wishlist" className="block px-4 py-2 text-sm text-foreground hover:bg-surface hover:text-primary transition-colors">
-                    Wishlist
-                  </Link>
-                  <div className="mx-2 my-1 border-t border-border/50" />
-                  <button 
-                    onClick={() => useAuthStore.getState().logout()}
-                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
-                  >
-                    Logout
-                  </button>
-                </div>
+                      <Link href="/account/orders" onClick={() => setIsAccountOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-surface hover:text-primary transition-colors">
+                        <ShoppingBag size={16} /> My Orders
+                      </Link>
+                      <Link href="/account/wishlist" onClick={() => setIsAccountOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-surface hover:text-primary transition-colors">
+                        <Heart size={16} /> Wishlist
+                      </Link>
+                      <div className="mx-4 my-1 border-t border-border/50" />
+                      <button 
+                        onClick={() => {
+                          useAuthStore.getState().logout();
+                          setIsAccountOpen(false);
+                        }}
+                        className="w-full text-left px-4 py-2.5 text-sm text-red-600 font-medium hover:bg-red-50 transition-colors"
+                      >
+                        Logout
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             ) : (
-              <Link href="/login" className="hidden md:flex p-2 text-foreground hover:text-primary transition-colors">
+              <Link href="/login" className="hidden md:flex p-2 text-foreground hover:text-primary transition-all duration-200 hover:scale-110 active:scale-95">
                 <User size={22} />
               </Link>
             )}
