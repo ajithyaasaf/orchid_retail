@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Search, ShoppingBag, Heart, User, Menu, X, ChevronDown } from 'lucide-react';
 import { useCartStore } from '@/stores/cartStore';
 import { useWishlistStore } from '@/stores/wishlistStore';
+import { useAuthStore } from '@/stores/authStore';
 import { cn } from '@/lib/utils';
 
 const CATEGORIES = [
@@ -29,9 +30,11 @@ export default function Header() {
   const cartItems = useCartStore(s => s.totalItems);
   const openCartDrawer = useCartStore(s => s.openDrawer);
   const wishlistCount = useWishlistStore(s => s.items.length);
+  const { user, checkAuth } = useAuthStore();
 
   useEffect(() => {
     setMounted(true);
+    checkAuth();
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
@@ -185,9 +188,23 @@ export default function Header() {
             </button>
 
             {/* Account */}
-            <Link href="/account/profile" className="hidden md:flex p-2 text-foreground hover:text-primary transition-colors">
-              <User size={22} />
-            </Link>
+            {mounted && user ? (
+              <Link 
+                href="/account/profile" 
+                className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface hover:bg-primary-light transition-colors group"
+              >
+                <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-white text-[10px] font-bold">
+                  {user.name.charAt(0).toUpperCase()}
+                </div>
+                <span className="text-xs font-semibold text-foreground group-hover:text-primary transition-colors">
+                  {user.name.split(' ')[0]}
+                </span>
+              </Link>
+            ) : (
+              <Link href="/login" className="hidden md:flex p-2 text-foreground hover:text-primary transition-colors">
+                <User size={22} />
+              </Link>
+            )}
           </div>
         </div>
 

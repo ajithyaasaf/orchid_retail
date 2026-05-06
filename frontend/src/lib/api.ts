@@ -36,6 +36,7 @@ async function fetchApi<T>(endpoint: string, options: FetchOptions = {}): Promis
 
   const response = await fetch(url, {
     headers: { 'Content-Type': 'application/json', ...fetchOptions.headers },
+    credentials: 'include',
     ...fetchOptions,
   });
 
@@ -160,6 +161,13 @@ export const adminApi = {
   deleteCollection: (id: string) => fetchApi(`/admin/collections/${id}`, { method: 'DELETE' }),
   addProductsToCollection: (id: string, productIds: string[]) => fetchApi(`/admin/collections/${id}/products`, { method: 'POST', body: JSON.stringify({ productIds }) }),
   removeProductFromCollection: (collectionId: string, productId: string) => fetchApi(`/admin/collections/${collectionId}/products/${productId}`, { method: 'DELETE' }),
+};
+
+export const authApi = {
+  login: (data: any) => fetchApi('/auth/login', { method: 'POST', body: JSON.stringify(data) }),
+  register: (data: any) => fetchApi('/auth/register', { method: 'POST', body: JSON.stringify(data) }),
+  logout: () => fetchApi('/auth/logout', { method: 'POST' }),
+  me: () => fetchApi('/auth/me'),
 };
 
 export default fetchApi;

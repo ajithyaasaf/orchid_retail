@@ -1,7 +1,12 @@
 import { Router, Request, Response } from 'express';
 import prisma from '../lib/prisma';
+import { authMiddleware, adminMiddleware } from '../lib/authMiddleware';
 
 const router = Router();
+
+// Apply security to all admin routes
+router.use(authMiddleware);
+router.use(adminMiddleware);
 
 // ─── Dashboard ───────────────────────────────────────────────────────────────
 router.get('/dashboard', async (_req: Request, res: Response) => {

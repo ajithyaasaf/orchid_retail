@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
 import productRoutes from './routes/products';
 import categoryRoutes from './routes/categories';
 import cartRoutes from './routes/cart';
@@ -10,6 +11,7 @@ import adminRoutes from './routes/admin';
 import paymentRoutes from './routes/payments';
 import addressRoutes from './routes/addresses';
 import couponRoutes from './routes/coupons';
+import authRoutes from './routes/auth';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -21,6 +23,7 @@ app.use(cors({
   credentials: true,
 }));
 app.use(express.json());
+app.use(cookieParser());
 
 // ─── Health Check ────────────────────────────────────────────────────────────
 app.get('/api/health', (_req, res) => {
@@ -37,6 +40,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/addresses', addressRoutes);
 app.use('/api/coupons', couponRoutes);
+app.use('/api/auth', authRoutes);
 
 // ─── Global Error Handler ────────────────────────────────────────────────────
 app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
