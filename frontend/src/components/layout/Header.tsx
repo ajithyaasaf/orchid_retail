@@ -82,7 +82,7 @@ export default function Header() {
                 Orchid
               </span>
               <span className="block text-[10px] text-muted -mt-1 tracking-widest uppercase">
-                Export Quality
+                Wholesale Orchids
               </span>
             </div>
           </Link>

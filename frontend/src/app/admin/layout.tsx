@@ -54,7 +54,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <div>
                 <span className="text-sm font-bold tracking-tight">Orchid Retail</span>
                 <span className="block text-[10px] text-primary font-semibold tracking-widest uppercase mt-0.5">
-                  {isSuper ? 'Super Admin' : 'Admin Panel'}
+                  {isSuper ? 'Super Admin' : 'Administration'}
                 </span>
               </div>
             </Link>

@@ -8,12 +8,9 @@ import { cn } from '@/lib/utils';
 const BANNERS = [
   {
     id: 1,
-    title: 'Export Quality',
-    subtitle: 'At Factory Prices',
-    description: 'Premium fashion crafted for international brands — now available to you at up to 70% OFF.',
-    cta: 'Shop Now',
-    href: '/category/women-tops',
-    gradient: 'from-[#E8007A] to-[#C4005F]',
+    image: '/images/2.png',
+    href: '/category/new-born',
+    // Text removed as requested
   },
   {
     id: 2,
@@ -52,46 +49,82 @@ export default function HeroBanner() {
   }, [nextSlide]);
 
   return (
-    <section className="relative w-full h-[55vh] md:h-[65vh] lg:h-[75vh] overflow-hidden">
-      {/* Slides */}
-      {BANNERS.map((banner, index) => (
-        <div
-          key={banner.id}
-          className={cn(
-            'absolute inset-0 transition-all duration-700 ease-in-out bg-gradient-to-br',
-            banner.gradient,
-            index === currentSlide ? 'opacity-100 scale-100' : 'opacity-0 scale-105'
-          )}
-        >
-          <div className="container h-full flex items-center">
-            <div className="max-w-xl text-white space-y-4 md:space-y-6">
-              <span className="inline-block text-xs md:text-sm font-semibold tracking-[0.3em] uppercase text-white/80 animate-fade-in">
-                {banner.subtitle}
-              </span>
-              <h1
-                className="text-4xl md:text-6xl lg:text-7xl font-bold leading-[1.1] tracking-tight"
-                style={{ fontFamily: 'var(--font-playfair)' }}
-              >
-                {banner.title}
-              </h1>
-              <p className="text-sm md:text-base text-white/80 leading-relaxed max-w-md">
-                {banner.description}
-              </p>
-              <Link
-                href={banner.href}
-                className="inline-flex items-center gap-2 px-8 py-3.5 bg-white text-primary font-semibold rounded-full text-sm hover:bg-primary hover:text-white transition-all duration-300 shadow-lg hover:shadow-xl"
-              >
-                {banner.cta}
-                <ChevronRight size={16} />
-              </Link>
-            </div>
-          </div>
+    <section className="relative w-full overflow-hidden">
+      <div className="relative w-full aspect-[16/9] md:aspect-[21/9] lg:aspect-[21/7]">
+        {/* Slides */}
+        {BANNERS.map((banner, index) => (
+          <div
+            key={banner.id}
+            className={cn(
+              'absolute inset-0 transition-all duration-700 ease-in-out',
+              !banner.image && 'bg-gradient-to-br',
+              !banner.image && banner.gradient,
+              index === currentSlide ? 'opacity-100 scale-100' : 'opacity-0 scale-105'
+            )}
+          >
+            {/* Background Image */}
+            {banner.image && (
+              <div className="absolute inset-0">
+                <img
+                  src={banner.image}
+                  alt={banner.title || 'Banner'}
+                  className="w-full h-full object-cover"
+                />
+                {/* Subtle overlay for images with text */}
+                {banner.title && <div className="absolute inset-0 bg-black/20" />}
+              </div>
+            )}
 
-          {/* Decorative circles */}
-          <div className="absolute -right-20 -bottom-20 w-[500px] h-[500px] rounded-full bg-white/5" />
-          <div className="absolute right-20 top-10 w-[200px] h-[200px] rounded-full bg-white/5" />
-        </div>
-      ))}
+            {/* Content overlay */}
+            {(banner.title || banner.subtitle) && (
+              <div className="container relative h-full flex items-center z-10">
+                <div className="max-w-xl text-white space-y-4 md:space-y-6">
+                  {banner.subtitle && (
+                    <span className="inline-block text-xs md:text-sm font-semibold tracking-[0.3em] uppercase text-white/80 animate-fade-in">
+                      {banner.subtitle}
+                    </span>
+                  )}
+                  {banner.title && (
+                    <h1
+                      className="text-4xl md:text-6xl lg:text-7xl font-bold leading-[1.1] tracking-tight"
+                      style={{ fontFamily: 'var(--font-playfair)' }}
+                    >
+                      {banner.title}
+                    </h1>
+                  )}
+                  {banner.description && (
+                    <p className="text-sm md:text-base text-white/80 leading-relaxed max-w-md">
+                      {banner.description}
+                    </p>
+                  )}
+                  {banner.cta && (
+                    <Link
+                      href={banner.href}
+                      className="inline-flex items-center gap-2 px-8 py-3.5 bg-white text-primary font-semibold rounded-full text-sm hover:bg-primary hover:text-white transition-all duration-300 shadow-lg hover:shadow-xl"
+                    >
+                      {banner.cta}
+                      <ChevronRight size={16} />
+                    </Link>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Decorative circles (only for gradient backgrounds) */}
+            {!banner.image && (
+              <>
+                <div className="absolute -right-20 -bottom-20 w-[500px] h-[500px] rounded-full bg-white/5" />
+                <div className="absolute right-20 top-10 w-[200px] h-[200px] rounded-full bg-white/5" />
+              </>
+            )}
+            
+            {/* Link the whole slide if it's just an image */}
+            {banner.image && !banner.title && (
+              <Link href={banner.href} className="absolute inset-0 z-20" aria-label="Slide link" />
+            )}
+          </div>
+        ))}
+      </div>
 
       {/* Navigation arrows */}
       <button

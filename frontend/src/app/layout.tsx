@@ -4,7 +4,6 @@ import './globals.css';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import CartDrawer from '@/components/layout/CartDrawer';
-import WhatsAppButton from '@/components/layout/WhatsAppButton';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -20,16 +19,16 @@ const playfair = Playfair_Display({
 
 export const metadata: Metadata = {
   title: {
-    default: 'Orchid Export Store | Premium Fashion at Factory Prices',
-    template: '%s | Orchid Export Store',
+    default: 'Orchid Wholesale | Premium Fashion at Factory Prices',
+    template: '%s | Orchid Wholesale',
   },
-  description: 'Shop premium export-quality fashion at unbeatable factory prices. Women, Men, Kids — tops, dresses, shirts, accessories & more. Free shipping above ₹999.',
-  keywords: ['export quality', 'fashion', 'affordable fashion', 'women clothing', 'men clothing', 'kids wear', 'orchid store'],
+  description: 'Shop premium quality fashion at unbeatable factory prices. Wholesale Orchids — Women, Men, Kids — direct from the manufacturer. Free shipping above ₹999.',
+  keywords: ['wholesale fashion', 'factory prices', 'affordable fashion', 'women clothing', 'men clothing', 'kids wear', 'orchid store'],
   openGraph: {
     type: 'website',
     locale: 'en_IN',
     url: 'https://orchidhub.in',
-    siteName: 'Orchid Export Store',
+    siteName: 'Orchid Wholesale',
   },
 };
 
@@ -45,7 +44,6 @@ export default function RootLayout({
         <main className="flex-1">{children}</main>
         <Footer />
         <CartDrawer />
-        <WhatsAppButton />
       </body>
     </html>
   );

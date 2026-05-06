@@ -43,7 +43,7 @@ export default function Footer() {
               <div>
                 <span className="text-lg font-bold tracking-tight">Orchid</span>
                 <span className="block text-[10px] text-gray-400 -mt-1 tracking-widest uppercase">
-                  Export Quality
+                  Wholesale Orchids
                 </span>
               </div>
             </Link>
