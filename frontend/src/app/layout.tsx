@@ -20,15 +20,16 @@ const playfair = Playfair_Display({
 
 export const metadata: Metadata = {
   title: {
-    default: 'Orchid Export Surplus Store | Premium Fashion at Surplus Prices',
-    template: '%s | Orchid Export Surplus Store',
+    default: 'Orchid Export Store | Premium Fashion at Factory Prices',
+    template: '%s | Orchid Export Store',
   },
-  description: 'Shop export-quality fashion at unbeatable surplus prices. Women, Men, Kids — tops, dresses, shirts, accessories & more. Free shipping above ₹999.',
-  keywords: ['export surplus', 'fashion', 'affordable fashion', 'women clothing', 'men clothing', 'kids wear', 'orchid store'],
+  description: 'Shop premium export-quality fashion at unbeatable factory prices. Women, Men, Kids — tops, dresses, shirts, accessories & more. Free shipping above ₹999.',
+  keywords: ['export quality', 'fashion', 'affordable fashion', 'women clothing', 'men clothing', 'kids wear', 'orchid store'],
   openGraph: {
     type: 'website',
     locale: 'en_IN',
-    siteName: 'Orchid Export Surplus Store',
+    url: 'https://orchidhub.in',
+    siteName: 'Orchid Export Store',
   },
 };
 

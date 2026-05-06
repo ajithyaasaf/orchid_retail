@@ -12,7 +12,7 @@ export default function HomePage() {
       <CategoryStrip />
       <ProductSection
         title="New Arrivals"
-        subtitle="Fresh surplus stock — just landed"
+        subtitle="Fresh Factory Stock — just landed"
         limit={8}
       />
       <TrustBadges />

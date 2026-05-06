@@ -9,7 +9,7 @@ const BANNERS = [
   {
     id: 1,
     title: 'Export Quality',
-    subtitle: 'At Surplus Prices',
+    subtitle: 'At Factory Prices',
     description: 'Premium fashion crafted for international brands — now available to you at up to 70% OFF.',
     cta: 'Shop Now',
     href: '/category/women-tops',
@@ -18,7 +18,7 @@ const BANNERS = [
   {
     id: 2,
     title: 'New Arrivals',
-    subtitle: 'Fresh Surplus Stock',
+    subtitle: 'Premium Factory Stock',
     description: 'Discover the latest additions to our collection — just landed from export houses.',
     cta: 'Explore',
     href: '/category/women-dresses',

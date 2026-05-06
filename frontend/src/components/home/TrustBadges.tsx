@@ -3,7 +3,7 @@
 import { Shield, RotateCcw, Truck, Award, CreditCard, Headphones } from 'lucide-react';
 
 const BADGES = [
-  { icon: Award, label: 'Export Quality', desc: 'Genuine surplus products' },
+  { icon: Award, label: 'Export Quality', desc: 'Premium factory-direct products' },
   { icon: Truck, label: 'Free Delivery', desc: 'On orders above ₹999' },
   { icon: RotateCcw, label: 'Easy Returns', desc: '7-day return policy' },
   { icon: CreditCard, label: 'COD Available', desc: 'Cash on delivery' },

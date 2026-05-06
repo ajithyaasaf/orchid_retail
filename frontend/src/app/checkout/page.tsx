@@ -10,8 +10,7 @@ import { MapPin, Truck, CreditCard, Check, ArrowLeft, ShoppingBag, Loader2, Aler
 
 const STEPS = [
   { id: 1, label: 'Address', icon: MapPin },
-  { id: 2, label: 'Delivery', icon: Truck },
-  { id: 3, label: 'Payment', icon: CreditCard },
+  { id: 2, label: 'Payment', icon: CreditCard },
 ];
 
 const INDIAN_STATES = [
@@ -264,7 +263,7 @@ export default function CheckoutPage() {
                   }} className="flex items-center gap-2 text-sm text-primary font-medium p-2 hover:bg-primary/5 rounded-lg transition-colors">
                     <Plus size={16} /> Add New Address
                   </button>
-                  <button onClick={() => setCurrentStep(2)} className="w-full py-3.5 bg-primary text-white rounded-full font-semibold mt-4">Continue to Delivery</button>
+                  <button onClick={() => setCurrentStep(2)} className="w-full py-3.5 bg-primary text-white rounded-full font-semibold mt-4">Continue to Payment</button>
                 </div>
               )}
 
@@ -311,39 +310,10 @@ export default function CheckoutPage() {
             </div>
           )}
 
-          {/* STEP 2: DELIVERY */}
-          {currentStep === 2 && (
-            <div className="bg-white border border-border rounded-xl p-6 animate-fade-in space-y-6">
-              <h2 className="text-lg font-semibold">Delivery Method</h2>
-              <div className="space-y-3">
-                {[
-                  { id: 'standard', name: 'Standard Delivery', time: '3-5 business days', price: subtotal() >= 999 ? 'FREE' : '₹79' },
-                  { id: 'express', name: 'Express Delivery', time: '1-2 business days', price: '₹149' },
-                ].map(opt => (
-                  <label key={opt.id} className={cn('flex items-center justify-between p-4 border rounded-xl cursor-pointer transition-colors', deliveryOption === opt.id ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/30')}>
-                    <div className="flex items-center gap-3">
-                      <div className={cn('w-5 h-5 rounded-full border-2 flex items-center justify-center', deliveryOption === opt.id ? 'border-primary' : 'border-border')}>
-                        {deliveryOption === opt.id && <div className="w-2.5 h-2.5 rounded-full bg-primary" />}
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">{opt.name}</p>
-                        <p className="text-xs text-muted">{opt.time}</p>
-                      </div>
-                    </div>
-                    <span className={cn('text-sm font-semibold', opt.price === 'FREE' ? 'text-success' : '')}>{opt.price}</span>
-                    <input type="radio" checked={deliveryOption === opt.id} onChange={() => setDeliveryOption(opt.id as any)} className="sr-only" />
-                  </label>
-                ))}
-              </div>
-              <div className="flex gap-3 mt-6">
-                <button onClick={() => setCurrentStep(1)} className="flex-1 py-3.5 border border-border rounded-full font-medium">Back</button>
-                <button onClick={() => setCurrentStep(3)} className="flex-1 py-3.5 bg-primary text-white rounded-full font-semibold">Continue to Payment</button>
-              </div>
-            </div>
-          )}
 
-          {/* STEP 3: PAYMENT */}
-          {currentStep === 3 && (
+
+          {/* STEP 2: PAYMENT */}
+          {currentStep === 2 && (
             <div className="bg-white border border-border rounded-xl p-6 animate-fade-in space-y-6">
               <h2 className="text-lg font-semibold">Payment</h2>
               <div className="bg-surface rounded-xl p-6 text-center space-y-4">
@@ -359,7 +329,7 @@ export default function CheckoutPage() {
               </div>
               
               <div className="flex gap-3">
-                <button onClick={() => setCurrentStep(2)} className="flex-1 py-3.5 border border-border rounded-full font-medium">Back</button>
+                <button onClick={() => setCurrentStep(1)} className="flex-1 py-3.5 border border-border rounded-full font-medium">Back</button>
                 <button onClick={handlePlaceOrder} disabled={loading} className="flex-1 py-3.5 bg-primary text-white rounded-full font-semibold flex items-center justify-center gap-2">
                   {loading ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />} {loading ? 'Processing...' : 'Place Order & Pay'}
                 </button>

@@ -43,19 +43,19 @@ export default function Footer() {
               <div>
                 <span className="text-lg font-bold tracking-tight">Orchid</span>
                 <span className="block text-[10px] text-gray-400 -mt-1 tracking-widest uppercase">
-                  Export Surplus
+                  Export Quality
                 </span>
               </div>
             </Link>
             <p className="text-sm text-gray-400 leading-relaxed mb-6 max-w-xs">
-              Premium export-quality fashion at surplus prices. Originally crafted for international brands, now available to you.
+              Premium export-quality fashion at factory prices. Direct from the manufacturer to your doorstep.
             </p>
 
             {/* Contact */}
             <div className="space-y-2.5">
-              <a href="mailto:hello@orchidsurplus.com" className="flex items-center gap-2 text-sm text-gray-400 hover:text-primary transition-colors">
-                <Mail size={14} />
-                hello@orchidsurplus.com
+              <a href="mailto:hello@orchidhub.in" className="flex items-center gap-2 text-sm text-gray-400 hover:text-primary transition-colors">
+                <Mail size={16} />
+                hello@orchidhub.in
               </a>
               <a href="tel:+919876543210" className="flex items-center gap-2 text-sm text-gray-400 hover:text-primary transition-colors">
                 <Phone size={14} />
@@ -132,7 +132,7 @@ export default function Footer() {
       <div className="border-t border-white/10">
         <div className="container py-5 flex flex-col md:flex-row items-center justify-between gap-3">
           <p className="text-xs text-gray-500">
-            © {new Date().getFullYear()} Orchid Export Surplus Store. All rights reserved.
+            © {new Date().getFullYear()} Orchid Export Store. All rights reserved.
           </p>
           <div className="flex items-center gap-4">
             <span className="text-xs text-gray-500">We accept:</span>

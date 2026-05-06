@@ -12,7 +12,7 @@ export default function BrandStory() {
             className="text-3xl md:text-4xl font-bold text-foreground mb-6"
             style={{ fontFamily: 'var(--font-playfair)' }}
           >
-            Why Orchid Surplus?
+            Why Orchid?
           </h2>
 
           <div className="grid md:grid-cols-3 gap-8 mt-10">
@@ -20,9 +20,9 @@ export default function BrandStory() {
               <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto text-2xl">
                 🏭
               </div>
-              <h3 className="text-base font-semibold text-foreground">Export Surplus</h3>
+              <h3 className="text-base font-semibold text-foreground">Export Stock</h3>
               <p className="text-sm text-muted leading-relaxed">
-                Our products are surplus from top export houses that manufacture for brands like H&M, Zara, and GAP.
+                Our products are from top export houses that manufacture for brands like H&M, Zara, and GAP.
                 Same quality, fraction of the price.
               </p>
             </div>

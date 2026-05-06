@@ -48,7 +48,7 @@ export default function Header() {
     <>
       {/* Top announcement bar */}
       <div className="bg-primary text-white text-center py-1.5 text-xs md:text-sm font-medium tracking-wide">
-        🌸 Export Quality Products at Surplus Prices — Free Shipping Above ₹999
+        🌸 Premium Export Quality Products at Factory Prices — Free Shipping Above ₹999
       </div>
 
       {/* Main header */}
@@ -78,7 +78,7 @@ export default function Header() {
                 Orchid
               </span>
               <span className="block text-[10px] text-muted -mt-1 tracking-widest uppercase">
-                Export Surplus
+                Export Quality
               </span>
             </div>
           </Link>

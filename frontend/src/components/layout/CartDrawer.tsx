@@ -137,7 +137,7 @@ export default function CartDrawer() {
                 <ShoppingBag size={32} className="text-muted" />
               </div>
               <h3 className="text-lg font-semibold text-foreground mb-1">Your cart is empty</h3>
-              <p className="text-sm text-muted mb-6">Add some amazing surplus deals to get started!</p>
+              <p className="text-sm text-muted mb-6">Add some amazing premium products to get started!</p>
               <button
                 onClick={closeDrawer}
                 className="px-6 py-2.5 bg-primary text-white rounded-full text-sm font-medium hover:bg-primary-dark transition-colors"

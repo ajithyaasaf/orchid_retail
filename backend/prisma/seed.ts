@@ -177,7 +177,7 @@ async function main() {
         data: {
           name,
           slug,
-          description: `Premium export-quality ${name.toLowerCase()}. This surplus item offers exceptional value — originally manufactured for international brands, now available at our store at a fraction of the retail price. Crafted with attention to detail and superior materials.`,
+          description: `Premium export-quality ${name.toLowerCase()}. This premium factory-direct item offers exceptional value — manufactured with the same standards as international brands, now available at our store at a fraction of the retail price. Crafted with attention to detail and superior materials.`,
           categoryId,
           images: generateImageUrls(categorySlug, productCount),
           tags,
@@ -198,7 +198,7 @@ async function main() {
   await prisma.user.create({
     data: {
       name: 'Admin',
-      email: 'admin@orchidsurplus.com',
+      email: 'admin@orchidhub.in',
       phone: '+919999999999',
       role: 'admin',
     },
@@ -232,7 +232,7 @@ async function main() {
         isActive: true,
       },
       {
-        code: 'SURPLUS30',
+        code: 'ORCHID30',
         type: 'percentage',
         value: 30,
         minOrder: 1499,

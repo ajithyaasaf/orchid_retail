@@ -25,7 +25,7 @@ export default function Newsletter() {
           Stay in the Loop
         </h2>
         <p className="text-sm text-white/80 mb-8 max-w-md mx-auto">
-          Get first access to new surplus drops, exclusive deals, and flash sales. No spam — just style.
+          Get first access to new arrivals, exclusive deals, and flash sales. No spam — just style.
         </p>
 
         {submitted ? (
