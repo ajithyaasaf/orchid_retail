@@ -1,47 +1,69 @@
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
 // ─── Seed Data ─────────────────────────────────────────────────────────────
 
 const CATEGORIES = [
-  { name: 'New Born', slug: 'new-born', description: 'Clothes and accessories for new born babies', sortOrder: 1 },
-  { name: 'Girls', slug: 'girls', description: 'Dresses, skirts, and tops for girls', sortOrder: 2 },
-  { name: 'Boys', slug: 'boys', description: 'T-shirts, pants, and shorts for boys', sortOrder: 3 },
-  { name: 'Women', slug: 'women', description: 'T-shirts, dresses, and more for women', sortOrder: 4 },
-  { name: 'Mens', slug: 'mens', description: 'T-shirts, pants, and joggers for men', sortOrder: 5 },
+  { name: "Women's Tops", slug: 'women-tops', description: 'T-shirts, dresses, and more for women', sortOrder: 1 },
+  { name: "Women's Dresses", slug: 'women-dresses', description: 'Dresses and gowns for women', sortOrder: 2 },
+  { name: "Women's Bottoms", slug: 'women-bottoms', description: 'Pants, skirts, and leggings for women', sortOrder: 3 },
+  { name: "Men's Shirts", slug: 'men-shirts', description: 'Premium shirts and t-shirts for men', sortOrder: 4 },
+  { name: "Men's Trousers", slug: 'men-trousers', description: 'Pants and joggers for men', sortOrder: 5 },
+  { name: "Kids' Wear", slug: 'kids-wear', description: 'Comfortable clothing for children', sortOrder: 6 },
+  { name: 'Accessories', slug: 'accessories', description: 'Bags, belts, and more', sortOrder: 7 },
+  { name: 'Footwear', slug: 'footwear', description: 'Premium shoes and sandals', sortOrder: 8 },
 ];
 
 const PRODUCT_TEMPLATES: Record<string, { names: string[]; tags: string[]; priceRange: [number, number]; mrpMultiplier: number }> = {
-  'new-born': {
-    names: ['Cap', 'Glouses', 'Burp cloth', 'Towels', 'Button jabla', 'Rope jabla', 'Half sleeve jabla set', 'Full sleeve jabla set', 'Sleeveless jabla set', 'Rope frocks', 'Front open frocks', 'Muslin front open sets', 'Muslin frocks', 'Muslin blankets', 'Muslin swaddle', 'Padded undies', 'Hooded towel'],
-    tags: ['newborn', 'baby', 'cotton', 'soft'],
-    priceRange: [199, 699],
+  'women-tops': {
+    names: ['Premium Cotton Tee', 'Silk Blouse', 'Linen Top', 'Knitted Sweater', 'V-Neck T-Shirt', 'Floral Print Top'],
+    tags: ['women', 'top', 'casual', 'premium'],
+    priceRange: [399, 1299],
+    mrpMultiplier: 2.5,
+  },
+  'women-dresses': {
+    names: ['Maxi Summer Dress', 'Cocktail Dress', 'Midi Skirt', 'Evening Gown', 'Bodycon Dress', 'A-Line Dress'],
+    tags: ['women', 'dress', 'formal', 'party'],
+    priceRange: [799, 2999],
+    mrpMultiplier: 2.8,
+  },
+  'women-bottoms': {
+    names: ['High-Waist Jeans', 'Wide-Leg Trousers', 'Active Leggings', 'Denim Shorts', 'Formal Slacks'],
+    tags: ['women', 'bottom', 'denim', 'active'],
+    priceRange: [599, 1999],
+    mrpMultiplier: 2.5,
+  },
+  'men-shirts': {
+    names: ['Oxford Button-Down', 'Casual Flannel', 'Slim-Fit Polo', 'Formal White Shirt', 'Printed Cuban Shirt'],
+    tags: ['men', 'shirt', 'formal', 'casual'],
+    priceRange: [499, 1599],
+    mrpMultiplier: 2.5,
+  },
+  'men-trousers': {
+    names: ['Chino Pants', 'Cargo Trousers', 'Slim-Fit Jeans', 'Formal Dress Pants', 'Jogger Pants'],
+    tags: ['men', 'bottom', 'casual', 'formal'],
+    priceRange: [699, 2199],
+    mrpMultiplier: 2.5,
+  },
+  'kids-wear': {
+    names: ['Cotton Onesie', 'Cartoon Print Tee', 'Soft Denim Dungarees', 'Fleece Hoodie', 'Kids Tracksuit'],
+    tags: ['kids', 'comfortable', 'cotton', 'unisex'],
+    priceRange: [299, 999],
     mrpMultiplier: 2.0,
   },
-  'girls': {
-    names: ['Frocks', 'Skirts', 'Pants', 'Leggings', 'Tights', 'Palazzo pants', 'Slips', 'Underwear', 'Shorts', '3/4 pants'],
-    tags: ['girls', 'casual', 'party', 'comfortable'],
-    priceRange: [299, 1299],
-    mrpMultiplier: 2.5,
+  'accessories': {
+    names: ['Leather Belt', 'Canvas Backpack', 'Polarized Sunglasses', 'Minimalist Wallet', 'Cotton Tote Bag'],
+    tags: ['accessories', 'lifestyle', 'premium'],
+    priceRange: [199, 1499],
+    mrpMultiplier: 2.2,
   },
-  'boys': {
-    names: ['T shirts', 'Pants', 'Shorts', 'Underwear', '3/4 pants', 'Loobknit rib pants', 'Fine pants', 'Trunks', 'Half sleeve cord sets', 'Collerd cordset', 'Full sleeve co ords', 'Sleeveless co ords'],
-    tags: ['boys', 'casual', 'sports', 'comfortable'],
-    priceRange: [299, 1199],
-    mrpMultiplier: 2.5,
-  },
-  'women': {
-    names: ['T SHIRTS', 'full pants', 'Shorts', 'Leggings', '3/4 pants', 'Long polos', 'Feeding dresses', 'Dresses', 'Underwear', 'Tights'],
-    tags: ['women', 'casual', 'formal', 'ethnic'],
-    priceRange: [399, 1999],
-    mrpMultiplier: 2.5,
-  },
-  'mens': {
-    names: ['T shirts', 'Shorts', 'Full pants', 'Joggers', 'Underwear', 'Trunks'],
-    tags: ['mens', 'casual', 'sports', 'formal'],
-    priceRange: [399, 1799],
-    mrpMultiplier: 2.5,
+  'footwear': {
+    names: ['Classic Sneakers', 'Leather Loafers', 'Running Shoes', 'Summer Sandals', 'Formal Boots'],
+    tags: ['footwear', 'shoes', 'casual', 'formal'],
+    priceRange: [899, 3999],
+    mrpMultiplier: 2.6,
   },
 };
 
@@ -113,8 +135,8 @@ async function main() {
   await prisma.product.deleteMany();
   await prisma.category.deleteMany();
   await prisma.coupon.deleteMany();
-  await prisma.address.deleteMany();
-  await prisma.user.deleteMany();
+  // await prisma.address.deleteMany();
+  // await prisma.user.deleteMany();
 
   // Create categories
   console.log('📁 Creating categories...');
@@ -193,14 +215,31 @@ async function main() {
     }
   }
 
-  // Create admin user
-  console.log('👤 Creating admin user...');
-  await prisma.user.create({
-    data: {
+  // Create/Upsert admin users
+  console.log('👤 Setting up admin users...');
+  const adminPassword = await bcrypt.hash('admin123', 10);
+
+  await prisma.user.upsert({
+    where: { email: 'superadmin@orchidhub.in' },
+    update: { role: 'super_admin', password: adminPassword },
+    create: {
+      name: 'Super Admin',
+      email: 'superadmin@orchidhub.in',
+      phone: '+919999999999',
+      role: 'super_admin',
+      password: adminPassword,
+    },
+  });
+
+  await prisma.user.upsert({
+    where: { email: 'admin@orchidhub.in' },
+    update: { role: 'admin', password: adminPassword },
+    create: {
       name: 'Admin',
       email: 'admin@orchidhub.in',
-      phone: '+919999999999',
+      phone: '+918888888888',
       role: 'admin',
+      password: adminPassword,
     },
   });
 
