@@ -31,6 +31,7 @@ interface WishlistProduct {
 
 export default function WishlistPage() {
   const items = useWishlistStore(s => s.items);
+  const removeMany = useWishlistStore(s => s.removeMany);
   const [products, setProducts] = useState<WishlistProduct[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -82,8 +83,8 @@ export default function WishlistPage() {
         // Use URLSearchParams for safe query string encoding
         const qs = new URLSearchParams({
           ids: validIds.join(','),
-          // Fetch exactly the number of items we need (no pagination waste)
-          limit: String(Math.min(validIds.length, 50)),
+          // Fetch up to 100 items (most wishlists won't exceed this)
+          limit: String(Math.min(validIds.length, 100)),
         });
 
         const res = await fetch(`${API_BASE}/products?${qs.toString()}`, {
@@ -95,12 +96,23 @@ export default function WishlistPage() {
         }
 
         const json = await res.json();
+        
+        if (json.success && Array.isArray(json.data)) {
+          setProducts(json.data);
+          
+          // --- Pruning Stale Items ---
+          // Identify which of the IDs we requested were actually returned
+          const fetchedIds = new Set(json.data.map((p: any) => p.id));
+          // We only sent up to 100 IDs in the query
+          const requestedIds = validIds.slice(0, 100);
+          const staleIds = requestedIds.filter(id => !fetchedIds.has(id));
 
-        if (!json.success || !Array.isArray(json.data)) {
+          if (staleIds.length > 0) {
+            removeMany(staleIds);
+          }
+        } else {
           throw new Error('Unexpected response format from server');
         }
-
-        setProducts(json.data);
       } catch (err: any) {
         // AbortError is expected when the component unmounts or items change —
         // silently swallow it rather than showing an error to the user.

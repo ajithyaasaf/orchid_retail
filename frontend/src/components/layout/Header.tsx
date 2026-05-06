@@ -28,7 +28,7 @@ export default function Header() {
 
   const cartItems = useCartStore(s => s.totalItems);
   const openCartDrawer = useCartStore(s => s.openDrawer);
-  const wishlistCount = useWishlistStore(s => s.count);
+  const wishlistCount = useWishlistStore(s => s.items.length);
 
   useEffect(() => {
     setMounted(true);
@@ -157,12 +157,12 @@ export default function Header() {
             {/* Wishlist */}
             <Link href="/account/wishlist" className="relative p-2 text-foreground hover:text-primary transition-colors">
               <Heart size={22} />
-              {mounted && wishlistCount() > 0 && (
+              {mounted && wishlistCount > 0 && (
                 <span 
                   className="absolute -top-0.5 -right-0.5 bg-primary text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1"
                   style={{ minWidth: '18px', height: '18px' }}
                 >
-                  {wishlistCount()}
+                  {wishlistCount}
                 </span>
               )}
             </Link>

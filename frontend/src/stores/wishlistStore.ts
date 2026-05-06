@@ -6,6 +6,7 @@ interface WishlistStore {
 
   toggle: (productId: string | undefined | null) => void;
   remove: (productId: string) => void;
+  removeMany: (productIds: string[]) => void;
   isWishlisted: (productId: string) => boolean;
   clear: () => void;
   count: () => number;
@@ -31,6 +32,12 @@ export const useWishlistStore = create<WishlistStore>()(
       remove: (productId) => {
         if (!productId) return;
         set({ items: get().items.filter(id => id !== productId) });
+      },
+      
+      removeMany: (productIds) => {
+        if (!productIds || productIds.length === 0) return;
+        const setIds = new Set(productIds);
+        set({ items: get().items.filter(id => !setIds.has(id)) });
       },
 
       isWishlisted: (productId) => {
