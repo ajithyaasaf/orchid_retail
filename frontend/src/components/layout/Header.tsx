@@ -232,9 +232,7 @@ export default function Header() {
                           <div className="mx-4 my-1 border-t border-border/50" />
                         </>
                       )}
-                      <Link href="/account/profile" onClick={() => setIsAccountOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-surface hover:text-primary transition-colors">
-                        <User size={16} /> My Profile
-                      </Link>
+
                       <Link href="/account/orders" onClick={() => setIsAccountOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-surface hover:text-primary transition-colors">
                         <ShoppingBag size={16} /> My Orders
                       </Link>

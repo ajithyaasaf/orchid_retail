@@ -9,8 +9,6 @@ const NAV_ITEMS = [
   { href: '/account/orders', label: 'My Orders', icon: Package },
   { href: '/account/wishlist', label: 'Wishlist', icon: Heart },
   { href: '/account/addresses', label: 'Addresses', icon: MapPin },
-  { href: '/account/profile', label: 'Profile', icon: User },
-  { href: '/account/returns', label: 'Returns', icon: RotateCcw },
 ];
 
 export default function AccountLayout({ children }: { children: React.ReactNode }) {
