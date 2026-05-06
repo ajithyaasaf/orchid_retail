@@ -12,6 +12,7 @@ import paymentRoutes from './routes/payments';
 import addressRoutes from './routes/addresses';
 import couponRoutes from './routes/coupons';
 import authRoutes from './routes/auth';
+import comboRoutes from './routes/combos';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -41,6 +42,7 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/addresses', addressRoutes);
 app.use('/api/coupons', couponRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/combos', comboRoutes);
 
 // ─── Global Error Handler ────────────────────────────────────────────────────
 app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {

@@ -9,14 +9,11 @@ import { useAuthStore } from '@/stores/authStore';
 import { cn } from '@/lib/utils';
 
 const CATEGORIES = [
-  { name: "Women's Tops", slug: 'women-tops' },
-  { name: "Women's Dresses", slug: 'women-dresses' },
-  { name: "Women's Bottoms", slug: 'women-bottoms' },
-  { name: "Men's Shirts", slug: 'men-shirts' },
-  { name: "Men's Trousers", slug: 'men-trousers' },
-  { name: "Kids' Wear", slug: 'kids-wear' },
-  { name: 'Accessories', slug: 'accessories' },
-  { name: 'Footwear', slug: 'footwear' },
+  { name: 'New Born', slug: 'new-born' },
+  { name: 'Girls', slug: 'girls' },
+  { name: 'Boys', slug: 'boys' },
+  { name: 'Women', slug: 'women' },
+  { name: 'Mens', slug: 'mens' },
 ];
 
 export default function Header() {
@@ -122,14 +119,20 @@ export default function Header() {
               )}
             </div>
 
-            <Link href="/category/women-tops" className="px-3 py-2 text-sm font-medium text-foreground hover:text-primary transition-colors">
+            <Link href="/category/new-born" className="px-3 py-2 text-sm font-medium text-foreground hover:text-primary transition-colors">
+              New Born
+            </Link>
+            <Link href="/category/girls" className="px-3 py-2 text-sm font-medium text-foreground hover:text-primary transition-colors">
+              Girls
+            </Link>
+            <Link href="/category/boys" className="px-3 py-2 text-sm font-medium text-foreground hover:text-primary transition-colors">
+              Boys
+            </Link>
+            <Link href="/category/women" className="px-3 py-2 text-sm font-medium text-foreground hover:text-primary transition-colors">
               Women
             </Link>
-            <Link href="/category/men-shirts" className="px-3 py-2 text-sm font-medium text-foreground hover:text-primary transition-colors">
-              Men
-            </Link>
-            <Link href="/category/kids-wear" className="px-3 py-2 text-sm font-medium text-foreground hover:text-primary transition-colors">
-              Kids
+            <Link href="/category/mens" className="px-3 py-2 text-sm font-medium text-foreground hover:text-primary transition-colors">
+              Mens
             </Link>
           </nav>
 

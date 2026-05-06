@@ -13,6 +13,7 @@ const NAV = [
   { href: '/admin/orders', label: 'Orders', icon: ShoppingCart },
   { href: '/admin/customers', label: 'Customers', icon: Users },
   { href: '/admin/categories', label: 'Categories', icon: FolderOpen },
+  { href: '/admin/combos', label: 'Combos', icon: Package, superOnly: true },
   { href: '/admin/collections', label: 'Collections', icon: Layers, superOnly: true },
   { href: '/admin/coupons', label: 'Coupons', icon: Tag, superOnly: true },
 ];

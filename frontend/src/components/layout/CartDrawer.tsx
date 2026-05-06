@@ -31,8 +31,23 @@ function CartItemRow({ item }: { item: CartItemData }) {
           </h4>
         </Link>
         <p className="text-xs text-muted mt-0.5">
-          {item.variantSize} · {item.variantColor}
+          {item.comboId ? (
+            <span className="text-primary font-bold">Bundle Deal</span>
+          ) : (
+            `${item.variantSize} · ${item.variantColor}`
+          )}
         </p>
+
+        {item.subItems && (
+          <div className="mt-2 space-y-1">
+            {item.subItems.map((sub, i) => (
+              <div key={i} className="flex items-center gap-1.5 text-[10px] text-muted-foreground bg-surface/50 px-2 py-0.5 rounded border border-border/50">
+                <span className="font-bold text-primary shrink-0">Item {i + 1}:</span>
+                <span className="truncate">{sub.productName} ({sub.variantSize})</span>
+              </div>
+            ))}
+          </div>
+        )}
 
         <div className="flex items-center justify-between mt-2">
           {/* Quantity stepper */}

@@ -330,4 +330,81 @@ router.delete('/collections/:id/products/:productId', async (req: Request, res: 
   } catch (error) { console.error('Error removing product from collection:', error); res.status(500).json({ success: false, error: 'Failed to remove product' }); }
 });
 
+// ─── Combos CRUD ─────────────────────────────────────────────────────────────
+router.use('/combos', superAdminMiddleware);
+
+router.get('/combos', async (req: Request, res: Response) => {
+  try {
+    const { search, page = '1', limit = '20' } = req.query;
+    const pageNum = parseInt(page as string);
+    const limitNum = parseInt(limit as string);
+    const where: any = {};
+    if (search) where.name = { contains: search as string, mode: 'insensitive' };
+
+    const [combos, total] = await Promise.all([
+      prisma.combo.findMany({
+        where,
+        include: { products: { include: { product: { select: { name: true, images: true, variants: true } } } } },
+        orderBy: { createdAt: 'desc' },
+        skip: (pageNum - 1) * limitNum,
+        take: limitNum
+      }),
+      prisma.combo.count({ where }),
+    ]);
+    res.json({ success: true, data: combos, pagination: { page: pageNum, limit: limitNum, total, totalPages: Math.ceil(total / limitNum) } });
+  } catch (error) { console.error('Error fetching combos:', error); res.status(500).json({ success: false, error: 'Failed to fetch combos' }); }
+});
+
+router.post('/combos', async (req: Request, res: Response) => {
+  try {
+    const { name, slug, description, images, price, mrp, isFeatured, productIds } = req.body;
+    if (!name || !slug || !price || !productIds?.length) return res.status(400).json({ success: false, error: 'Missing required fields' });
+
+    const combo = await prisma.combo.create({
+      data: {
+        name, slug, description: description || '', images: images || [], price: Number(price), mrp: Number(mrp || 0), isFeatured: isFeatured || false,
+        products: { create: productIds.map((pid: string) => ({ productId: pid })) }
+      },
+      include: { products: true }
+    });
+    res.status(201).json({ success: true, data: combo });
+  } catch (error: any) {
+    if (error.code === 'P2002') return res.status(409).json({ success: false, error: 'Slug already exists' });
+    console.error('Error creating combo:', error); res.status(500).json({ success: false, error: 'Failed to create combo' });
+  }
+});
+
+router.put('/combos/:id', async (req: Request, res: Response) => {
+  try {
+    const { name, slug, description, images, price, mrp, isFeatured, isActive, productIds } = req.body;
+    
+    // Update basic info
+    const combo = await prisma.combo.update({
+      where: { id: req.params.id },
+      data: {
+        ...(name && { name }), ...(slug && { slug }), ...(description !== undefined && { description }), 
+        ...(images && { images }), ...(price !== undefined && { price: Number(price) }), 
+        ...(mrp !== undefined && { mrp: Number(mrp) }), ...(isFeatured !== undefined && { isFeatured }), 
+        ...(isActive !== undefined && { isActive })
+      }
+    });
+
+    // Update products if provided
+    if (productIds && Array.isArray(productIds)) {
+      await prisma.comboProduct.deleteMany({ where: { comboId: req.params.id } });
+      await prisma.comboProduct.createMany({ data: productIds.map((pid: string) => ({ comboId: req.params.id, productId: pid })) });
+    }
+
+    const updatedCombo = await prisma.combo.findUnique({ where: { id: req.params.id }, include: { products: true } });
+    res.json({ success: true, data: updatedCombo });
+  } catch (error) { console.error('Error updating combo:', error); res.status(500).json({ success: false, error: 'Failed to update combo' }); }
+});
+
+router.delete('/combos/:id', async (req: Request, res: Response) => {
+  try {
+    await prisma.combo.delete({ where: { id: req.params.id } });
+    res.json({ success: true });
+  } catch (error) { console.error('Error deleting combo:', error); res.status(500).json({ success: false, error: 'Failed to delete combo' }); }
+});
+
 export default router;

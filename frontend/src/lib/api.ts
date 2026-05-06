@@ -58,6 +58,11 @@ export const productApi = {
   getBySlug: (slug: string) => fetchApi(`/products/${slug}`),
 };
 
+export const comboApi = {
+  list: (params?: Record<string, string | number | boolean | undefined>) => fetchApi('/combos', { params }),
+  getBySlug: (slug: string) => fetchApi(`/combos/${slug}`),
+};
+
 // ─── Category APIs ───────────────────────────────────────────────────────────
 export const categoryApi = {
   list: () => fetchApi('/categories'),
@@ -166,6 +171,12 @@ export const adminApi = {
   deleteCollection: (id: string) => fetchApi(`/admin/collections/${id}`, { method: 'DELETE' }),
   addProductsToCollection: (id: string, productIds: string[]) => fetchApi(`/admin/collections/${id}/products`, { method: 'POST', body: JSON.stringify({ productIds }) }),
   removeProductFromCollection: (collectionId: string, productId: string) => fetchApi(`/admin/collections/${collectionId}/products/${productId}`, { method: 'DELETE' }),
+
+  // Combos
+  getCombos: (params?: Record<string, string | number | boolean | undefined>) => fetchApi('/admin/combos', { params }),
+  createCombo: (data: Record<string, unknown>) => fetchApi('/admin/combos', { method: 'POST', body: JSON.stringify(data) }),
+  updateCombo: (id: string, data: Record<string, unknown>) => fetchApi(`/admin/combos/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteCombo: (id: string) => fetchApi(`/admin/combos/${id}`, { method: 'DELETE' }),
 };
 
 export const authApi = {

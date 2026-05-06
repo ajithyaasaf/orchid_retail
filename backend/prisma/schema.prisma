@@ -45,6 +45,7 @@ model Product {
   reviews      Review[]
   orderItems   OrderItem[]
   collections  CollectionProduct[]
+  comboProducts ComboProduct[]
   createdAt    DateTime            @default(now())
   updatedAt    DateTime            @updatedAt
 
@@ -165,6 +166,8 @@ model Order {
 
 // ─── Order Item ──────────────────────────────────────────────────────────────
 
+// ─── Order Item ──────────────────────────────────────────────────────────────
+
 model OrderItem {
   id           String   @id @default(cuid())
   orderId      String
@@ -173,6 +176,8 @@ model OrderItem {
   product      Product  @relation(fields: [productId], references: [id])
   variantId    String
   variant      Variant  @relation(fields: [variantId], references: [id])
+  comboId      String?  // If this item was part of a combo
+  combo        Combo?   @relation(fields: [comboId], references: [id])
   productName  String
   productImage String
   variantSize  String
@@ -184,6 +189,7 @@ model OrderItem {
   lineTotal    Float
 
   @@index([orderId])
+  @@index([comboId])
 }
 
 // ─── Review ──────────────────────────────────────────────────────────────────
@@ -264,5 +270,36 @@ model CollectionProduct {
 
   @@id([collectionId, productId])
   @@index([collectionId])
+  @@index([productId])
+}
+
+// ─── Combo (Bundle Deals) ───────────────────────────────────────────────────
+
+model Combo {
+  id          String         @id @default(cuid())
+  name        String
+  slug        String         @unique
+  description String
+  images      String[]       // Array of image URLs
+  price       Float          // Special bundle price
+  mrp         Float          // Original total price
+  isActive    Boolean        @default(true)
+  isFeatured  Boolean        @default(false)
+  products    ComboProduct[]
+  orderItems  OrderItem[]
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@index([slug])
+}
+
+model ComboProduct {
+  id        String  @id @default(cuid())
+  comboId   String
+  combo     Combo   @relation(fields: [comboId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+
+  @@index([comboId])
   @@index([productId])
 }

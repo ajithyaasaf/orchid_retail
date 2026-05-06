@@ -13,6 +13,18 @@ export interface CartItemData {
   variantColor: string;
   price: number;
   mrp: number;
+  
+  // For Combos/Bundles
+  comboId?: string;
+  subItems?: {
+    productId: string;
+    variantId: string;
+    productName: string;
+    productImage: string;
+    variantSize: string;
+    variantColor: string;
+    sku: string;
+  }[];
 }
 
 interface CartStore {
