@@ -79,11 +79,16 @@ export default function OrdersPage() {
                   <p className="text-xs text-muted mt-0.5">{new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
                 </div>
                 <div className={cn(
-                  'flex items-center gap-1.5 px-3 py-1.5 rounded-full border',
-                  order.orderStatus === 'delivered' ? 'bg-success/5 border-success/20 text-success' : 'bg-surface border-border'
+                  'flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium capitalize transition-colors',
+                  order.orderStatus === 'delivered' ? 'bg-success/5 border-success/20 text-success' :
+                  order.orderStatus === 'shipped' ? 'bg-blue-50 border-blue-200 text-blue-600' :
+                  order.orderStatus === 'pending' || order.orderStatus === 'confirmed' ? 'bg-warning/5 border-warning/20 text-warning' :
+                  order.orderStatus === 'processing' ? 'bg-primary/5 border-primary/20 text-primary' :
+                  order.orderStatus === 'cancelled' ? 'bg-error/5 border-error/20 text-error' :
+                  'bg-surface border-border text-muted'
                 )}>
                   {STATUS_ICONS[order.orderStatus] || <Clock size={16} className="text-muted" />}
-                  <span className="text-xs font-medium capitalize">{order.orderStatus}</span>
+                  <span>{order.orderStatus}</span>
                 </div>
               </div>
 
