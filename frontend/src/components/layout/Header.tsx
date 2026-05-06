@@ -189,17 +189,52 @@ export default function Header() {
 
             {/* Account */}
             {mounted && user ? (
-              <Link 
-                href="/account/profile" 
-                className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface hover:bg-primary-light transition-colors group"
-              >
-                <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-white text-[10px] font-bold">
-                  {user.name.charAt(0).toUpperCase()}
+              <div className="relative group hidden md:block">
+                <Link 
+                  href="/account/profile" 
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface hover:bg-primary-light transition-colors"
+                >
+                  <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-white text-[10px] font-bold">
+                    {user.name.charAt(0).toUpperCase()}
+                  </div>
+                  <span className="text-xs font-semibold text-foreground group-hover:text-primary transition-colors">
+                    {user.name.split(' ')[0]}
+                  </span>
+                  <ChevronDown size={14} className="text-muted group-hover:text-primary transition-transform group-hover:rotate-180" />
+                </Link>
+
+                {/* Account Dropdown */}
+                <div className="absolute top-full right-0 mt-1 w-48 bg-white shadow-xl rounded-xl border border-border/50 py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                  {user.role === 'admin' && (
+                    <>
+                      <Link 
+                        href="/admin" 
+                        className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-primary hover:bg-primary/5 transition-colors"
+                      >
+                        <span className="text-lg">🛡️</span>
+                        Admin Dashboard
+                      </Link>
+                      <div className="mx-2 my-1 border-t border-border/50" />
+                    </>
+                  )}
+                  <Link href="/account/profile" className="block px-4 py-2 text-sm text-foreground hover:bg-surface hover:text-primary transition-colors">
+                    My Profile
+                  </Link>
+                  <Link href="/account/orders" className="block px-4 py-2 text-sm text-foreground hover:bg-surface hover:text-primary transition-colors">
+                    My Orders
+                  </Link>
+                  <Link href="/account/wishlist" className="block px-4 py-2 text-sm text-foreground hover:bg-surface hover:text-primary transition-colors">
+                    Wishlist
+                  </Link>
+                  <div className="mx-2 my-1 border-t border-border/50" />
+                  <button 
+                    onClick={() => useAuthStore.getState().logout()}
+                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                  >
+                    Logout
+                  </button>
                 </div>
-                <span className="text-xs font-semibold text-foreground group-hover:text-primary transition-colors">
-                  {user.name.split(' ')[0]}
-                </span>
-              </Link>
+              </div>
             ) : (
               <Link href="/login" className="hidden md:flex p-2 text-foreground hover:text-primary transition-colors">
                 <User size={22} />
@@ -242,6 +277,15 @@ export default function Header() {
                 </Link>
               ))}
               <hr className="my-3 border-border" />
+              {user && user.role === 'admin' && (
+                <Link
+                  href="/admin"
+                  className="block px-4 py-3 text-sm font-bold text-primary hover:bg-primary/5 rounded-lg transition-colors"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  🛡️ Admin Dashboard
+                </Link>
+              )}
               <Link
                 href="/account/profile"
                 className="block px-4 py-3 text-sm font-medium text-foreground hover:text-primary hover:bg-surface rounded-lg transition-colors"
@@ -256,6 +300,17 @@ export default function Header() {
               >
                 My Orders
               </Link>
+              {user && (
+                <button
+                  onClick={() => {
+                    useAuthStore.getState().logout();
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="w-full text-left px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                >
+                  Logout
+                </button>
+              )}
             </nav>
           </div>
         )}
