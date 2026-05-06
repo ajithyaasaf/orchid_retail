@@ -36,9 +36,9 @@ export default function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12">
           {/* Brand section */}
           <div className="col-span-2 md:col-span-1">
-            <Link href="/" className="inline-flex items-center gap-2 mb-4">
-              <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
-                <span className="text-white text-xl">🌸</span>
+            <Link href="/" className="inline-flex items-center gap-3 mb-4 group">
+              <div className="w-10 h-10 rounded-full overflow-hidden bg-white/10 group-hover:scale-110 transition-transform">
+                <img src="/images/Logo.png" alt="Orchid Logo" className="w-full h-full object-cover" />
               </div>
               <div>
                 <span className="text-lg font-bold tracking-tight">Orchid</span>

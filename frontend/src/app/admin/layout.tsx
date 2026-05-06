@@ -50,7 +50,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <aside className="hidden md:flex flex-col w-64 bg-hero-bg text-white min-h-screen sticky top-0 border-r border-white/5">
           <div className="p-6 border-b border-white/10">
             <Link href="/admin" className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center text-xl shadow-inner">🌸</div>
+              <div className="w-10 h-10 rounded-lg overflow-hidden bg-white/10 border border-white/20">
+                <img src="/images/Logo.png" alt="Orchid Logo" className="w-full h-full object-cover" />
+              </div>
               <div>
                 <span className="text-sm font-bold tracking-tight">Orchid Retail</span>
                 <span className="block text-[10px] text-primary font-semibold tracking-widest uppercase mt-0.5">

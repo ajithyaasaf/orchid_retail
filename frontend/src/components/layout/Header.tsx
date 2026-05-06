@@ -73,9 +73,9 @@ export default function Header() {
           </button>
 
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 shrink-0">
-            <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center">
-              <span className="text-white text-lg">🌸</span>
+          <Link href="/" className="flex items-center gap-3 shrink-0 group">
+            <div className="w-10 h-10 md:w-11 md:h-11 rounded-full overflow-hidden transition-transform duration-300 group-hover:scale-110">
+              <img src="/images/Logo.png" alt="Orchid Logo" className="w-full h-full object-cover" />
             </div>
             <div className="hidden sm:block">
               <span className="text-lg md:text-xl font-bold text-foreground tracking-tight">
