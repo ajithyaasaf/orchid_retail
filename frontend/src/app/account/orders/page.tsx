@@ -110,7 +110,7 @@ export default function OrdersPage() {
                     {order.paymentStatus === 'paid' ? 'Paid via Razorpay' : 'Pending Payment'}
                   </span>
                 </div>
-                <Link href={`/order-success?orderId=${order.id}`} className="text-sm text-primary font-medium hover:underline px-4 py-2 bg-primary/5 rounded-lg text-center">
+                <Link href={`/account/orders/${order.id}`} className="text-sm text-primary font-medium hover:underline px-4 py-2 bg-primary/5 rounded-lg text-center">
                   View Details
                 </Link>
               </div>
