@@ -21,7 +21,7 @@ const NAV = [
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, isLoading } = useAuthStore();
+  const { user, isLoading, checkAuth } = useAuthStore();
   
   const isSuper = user?.role === 'super_admin';
 
@@ -29,6 +29,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const filteredNav = useMemo(() => {
     return NAV.filter(item => !item.superOnly || isSuper);
   }, [isSuper]);
+
+  // Initial Auth Check
+  useEffect(() => {
+    checkAuth();
+  }, []);
 
   // Security Guard: If standard admin tries to access superOnly page directly via URL
   useEffect(() => {
@@ -41,6 +46,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }, [pathname, isSuper, user, router]);
 
   const isActive = (href: string) => href === '/admin' ? pathname === href : pathname.startsWith(href);
+  
   useEffect(() => {
     if (!isLoading && !user) {
       router.push('/login?redirect=/admin');
@@ -136,4 +142,3 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     </div>
   );
 }
-

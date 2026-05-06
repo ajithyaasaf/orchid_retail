@@ -25,10 +25,10 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       user: null,
-      isLoading: false,
+      isLoading: true, // Start as true to prevent premature redirects on refresh
       error: null,
 
-      setUser: (user) => set({ user }),
+      setUser: (user) => set({ user, isLoading: false }),
 
       login: async (email, password) => {
         set({ isLoading: true, error: null });
@@ -68,26 +68,35 @@ export const useAuthStore = create<AuthState>()(
         try {
           await authApi.logout();
         } finally {
-          set({ user: null, error: null });
+          set({ user: null, error: null, isLoading: false });
         }
       },
 
       checkAuth: async () => {
+        set({ isLoading: true });
         try {
           const res: any = await authApi.me();
           if (res.success) {
-            set({ user: res.data });
+            set({ user: res.data, isLoading: false });
           } else {
-            set({ user: null });
+            set({ user: null, isLoading: false });
           }
         } catch {
-          set({ user: null });
+          set({ user: null, isLoading: false });
         }
       },
     }),
     {
       name: 'auth-storage',
       partialize: (state) => ({ user: state.user }),
+      // Ensure we don't persist the isLoading state
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          // After hydration, if we have a user, we might still want to checkAuth 
+          // but at least we can stop the initial blank screen
+          state.isLoading = false;
+        }
+      },
     }
   )
 );
