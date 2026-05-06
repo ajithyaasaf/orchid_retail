@@ -28,8 +28,17 @@ export const authMiddleware = (req: AuthRequest, res: Response, next: NextFuncti
 };
 
 export const adminMiddleware = (req: AuthRequest, res: Response, next: NextFunction) => {
-  if (req.user?.role !== 'admin') {
+  const role = req.user?.role;
+  if (role !== 'admin' && role !== 'super_admin') {
     return res.status(403).json({ success: false, error: 'Forbidden: Admin access required' });
   }
   next();
 };
+
+export const superAdminMiddleware = (req: AuthRequest, res: Response, next: NextFunction) => {
+  if (req.user?.role !== 'super_admin') {
+    return res.status(403).json({ success: false, error: 'Forbidden: Super Admin access required' });
+  }
+  next();
+};
+

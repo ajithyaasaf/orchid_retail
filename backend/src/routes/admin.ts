@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import prisma from '../lib/prisma';
-import { authMiddleware, adminMiddleware } from '../lib/authMiddleware';
+import { authMiddleware, adminMiddleware, superAdminMiddleware } from '../lib/authMiddleware';
 
 const router = Router();
 
@@ -32,6 +32,9 @@ router.get('/dashboard', async (_req: Request, res: Response) => {
 });
 
 // ─── Products CRUD ───────────────────────────────────────────────────────────
+router.use('/products', superAdminMiddleware);
+router.use('/variants', superAdminMiddleware); // Variants are part of product management
+
 router.get('/products', async (req: Request, res: Response) => {
   try {
     const { search, category, status, page = '1', limit = '20' } = req.query;
@@ -196,6 +199,8 @@ router.get('/customers/:id', async (req: Request, res: Response) => {
 });
 
 // ─── Coupons CRUD ────────────────────────────────────────────────────────────
+router.use('/coupons', superAdminMiddleware);
+
 router.get('/coupons', async (_req: Request, res: Response) => {
   try {
     const coupons = await prisma.coupon.findMany({ orderBy: { createdAt: 'desc' }, include: { _count: { select: { usages: true } } } });
@@ -276,6 +281,8 @@ router.delete('/categories/:id', async (req: Request, res: Response) => {
 });
 
 // ─── Collections CRUD ────────────────────────────────────────────────────────
+router.use('/collections', superAdminMiddleware);
+
 router.get('/collections', async (_req: Request, res: Response) => {
   try {
     const collections = await prisma.collection.findMany({ orderBy: { sortOrder: 'asc' }, include: { _count: { select: { products: true } } } });
