@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Search, ShoppingBag, Heart, User, Menu, X, ChevronDown } from 'lucide-react';
+import { Search, ShoppingBag, Heart, User, Menu, X, ChevronDown, Clock } from 'lucide-react';
 import { useCartStore } from '@/stores/cartStore';
 import { useWishlistStore } from '@/stores/wishlistStore';
 import { useAuthStore } from '@/stores/authStore';
@@ -19,7 +19,8 @@ export default function Header() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isAccountOpen, setIsAccountOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchCategory, setSearchCategory] = useState('');
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isMegaMenuOpen, setIsMegaMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -35,6 +36,11 @@ export default function Header() {
     setMounted(true);
     checkAuth();
     fetchCategories();
+    
+    // Load recent searches
+    const history = JSON.parse(localStorage.getItem('recentSearches') || '[]');
+    setRecentSearches(history);
+
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
@@ -42,10 +48,24 @@ export default function Header() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchQuery.trim()) {
-      let url = `/search?q=${encodeURIComponent(searchQuery.trim())}`;
-      if (searchCategory) url += `&category=${searchCategory}`;
-      window.location.href = url;
+    const query = searchQuery.trim();
+    if (!query) return;
+
+    // Save to history
+    const history = JSON.parse(localStorage.getItem('recentSearches') || '[]');
+    const newHistory = [query, ...history.filter((s: string) => s !== query)].slice(0, 5);
+    localStorage.setItem('recentSearches', JSON.stringify(newHistory));
+
+    // Check for direct category match
+    const directMatch = categories.find(c => 
+      c.name.toLowerCase() === query.toLowerCase() || 
+      c.slug.toLowerCase() === query.toLowerCase()
+    );
+
+    if (directMatch) {
+      window.location.href = `/category/${directMatch.slug}`;
+    } else {
+      window.location.href = `/search?q=${encodeURIComponent(query)}`;
     }
   };
 
@@ -155,42 +175,57 @@ export default function Header() {
           </nav>
 
           {/* Desktop Search */}
-          <div className="hidden md:flex flex-1 max-w-lg mx-6 relative group">
-            <form onSubmit={handleSearch} className="w-full flex items-center bg-surface rounded-full border border-transparent focus-within:border-primary focus-within:bg-white transition-all shadow-sm">
-              {/* Category Scope */}
-              <div className="relative shrink-0">
-                <select 
-                  className="appearance-none bg-transparent pl-5 pr-8 py-2.5 text-xs font-bold text-foreground cursor-pointer focus:outline-none border-r border-border/50"
-                  value={searchCategory}
-                  onChange={(e) => setSearchCategory(e.target.value)}
-                >
-                  <option value="">All Categories</option>
-                  {categories.filter(c => !c.parentId).map(cat => (
-                    <option key={cat.id} value={cat.slug}>{cat.name}</option>
-                  ))}
-                </select>
-                <ChevronDown size={10} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
-              </div>
-
-              {/* Input */}
-              <div className="relative flex-1">
-                <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+          <div className="hidden md:flex flex-1 max-w-md mx-6 relative">
+            <form onSubmit={handleSearch} className="w-full">
+              <div className="relative w-full group">
+                <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted group-focus-within:text-primary transition-colors" />
                 <input
                   type="text"
-                  placeholder="Search for products, brands and more..."
+                  placeholder="Search products..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-transparent text-sm focus:outline-none"
+                  onFocus={() => setIsSearchFocused(true)}
+                  className="w-full pl-10 pr-4 py-2.5 bg-surface rounded-full text-sm border border-transparent focus:border-primary focus:bg-white focus:outline-none transition-all shadow-sm"
                 />
               </div>
-              
-              <button 
-                type="submit"
-                className="mr-1.5 p-1.5 bg-primary text-white rounded-full hover:bg-primary-dark transition-colors shadow-lg shadow-primary/20"
-              >
-                <Search size={16} />
-              </button>
             </form>
+
+            {/* Recent Searches Overlay */}
+            {isSearchFocused && recentSearches.length > 0 && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setIsSearchFocused(false)} />
+                <div className="absolute top-full left-0 right-0 mt-2 bg-white shadow-2xl rounded-2xl border border-border/50 p-4 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="flex items-center justify-between mb-3 px-1">
+                    <h3 className="text-[10px] font-bold text-muted uppercase tracking-widest flex items-center gap-2">
+                      <Clock size={12} /> Recent Searches
+                    </h3>
+                    <button 
+                      onClick={() => {
+                        localStorage.removeItem('recentSearches');
+                        setRecentSearches([]);
+                      }}
+                      className="text-[10px] font-bold text-primary hover:underline"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {recentSearches.map((term, i) => (
+                      <button
+                        key={i}
+                        onClick={() => {
+                          setSearchQuery(term);
+                          window.location.href = `/search?q=${encodeURIComponent(term)}`;
+                        }}
+                        className="px-3 py-1.5 bg-surface hover:bg-primary/10 hover:text-primary text-xs font-medium rounded-full transition-colors flex items-center gap-2"
+                      >
+                        {term}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Right actions */}
@@ -310,39 +345,18 @@ export default function Header() {
         {/* Mobile search bar (expandable) */}
         {isSearchOpen && (
           <div className="md:hidden border-t border-border px-4 py-3 animate-fade-in bg-white shadow-lg">
-            <form onSubmit={handleSearch} className="space-y-3">
-              <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
-                  <input
-                    type="text"
-                    placeholder="Search products..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 bg-surface rounded-xl text-sm focus:outline-none border border-transparent focus:border-primary transition-all"
-                    autoFocus
-                  />
-                </div>
-              </div>
+            <form onSubmit={handleSearch}>
               <div className="relative">
-                <select 
-                  className="w-full appearance-none bg-surface pl-4 pr-10 py-2.5 rounded-xl text-xs font-bold text-foreground focus:outline-none border border-transparent focus:border-primary transition-all"
-                  value={searchCategory}
-                  onChange={(e) => setSearchCategory(e.target.value)}
-                >
-                  <option value="">All Categories</option>
-                  {categories.filter(c => !c.parentId).map(cat => (
-                    <option key={cat.id} value={cat.slug}>{cat.name}</option>
-                  ))}
-                </select>
-                <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
+                <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+                <input
+                  type="text"
+                  placeholder="Search products..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 bg-surface rounded-xl text-sm focus:outline-none border border-transparent focus:border-primary transition-all"
+                  autoFocus
+                />
               </div>
-              <button 
-                type="submit"
-                className="w-full py-3 bg-primary text-white rounded-xl font-bold text-sm shadow-lg shadow-primary/20 active:scale-95 transition-transform"
-              >
-                Search Now
-              </button>
             </form>
           </div>
         )}

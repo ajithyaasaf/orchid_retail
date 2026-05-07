@@ -23,6 +23,7 @@ function SearchContent() {
   
   const [results, setResults] = useState<ProductData[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isFuzzy, setIsFuzzy] = useState(false);
   const [total, setTotal] = useState(0);
   const [searchInput, setSearchInput] = useState(query);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -51,6 +52,7 @@ function SearchContent() {
       .then((res: any) => {
         setResults(res.data || []);
         setTotal(res.pagination?.total || 0);
+        setIsFuzzy(res.isFuzzy || false);
       })
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -212,6 +214,17 @@ function SearchContent() {
 
         {/* Results Grid */}
         <div className="flex-1">
+          {isFuzzy && results.length > 0 && (
+            <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-center gap-3 text-amber-800">
+              <div className="w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center shrink-0">
+                <Search size={16} />
+              </div>
+              <p className="text-sm font-medium">
+                No exact matches for <span className="font-bold underline">"{query}"</span>. Showing related results instead.
+              </p>
+            </div>
+          )}
+
           <div className="flex items-center justify-between mb-6">
             <p className="text-sm text-muted font-medium">
               {loading ? 'Searching...' : `${total} items found`}

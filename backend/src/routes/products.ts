@@ -47,11 +47,22 @@ router.get('/', async (req: Request, res: Response) => {
     }
 
     if (search) {
-      where.OR = [
-        { name: { contains: search as string, mode: 'insensitive' } },
-        { description: { contains: search as string, mode: 'insensitive' } },
-        { tags: { hasSome: [(search as string).toLowerCase()] } },
-      ];
+      const searchTerms = (search as string).trim().split(/\s+/).filter(t => t.length > 0);
+      
+      if (searchTerms.length > 0) {
+        // Use AND for multiple terms: every term must match something
+        where.AND = [
+          ...(where.AND as any[] || []),
+          ...searchTerms.map(term => ({
+            OR: [
+              { name: { contains: term, mode: 'insensitive' } },
+              { description: { contains: term, mode: 'insensitive' } },
+              { tags: { hasSome: [term.toLowerCase()] } },
+              { category: { name: { contains: term, mode: 'insensitive' } } }, // Search in category name too
+            ]
+          }))
+        ];
+      }
     }
 
     if (tags) {
@@ -85,7 +96,7 @@ router.get('/', async (req: Request, res: Response) => {
       case 'newest': default: orderBy = { createdAt: 'desc' }; break;
     }
 
-    const [products, total] = await Promise.all([
+    let [products, total] = await Promise.all([
       prisma.product.findMany({
         where,
         include: {
@@ -99,6 +110,29 @@ router.get('/', async (req: Request, res: Response) => {
       }),
       prisma.product.count({ where }),
     ]);
+
+    let isFuzzy = false;
+    // ─── FUZZY FALLBACK: If no results, try matching by first 3 letters ───
+    if (products.length === 0 && search && (search as string).length > 2) {
+      const firstThree = (search as string).substring(0, 3).toLowerCase();
+      products = await prisma.product.findMany({
+        where: {
+          isActive: true,
+          OR: [
+            { name: { contains: firstThree, mode: 'insensitive' } },
+            { tags: { hasSome: [firstThree] } },
+          ],
+        },
+        include: {
+          category: true,
+          variants: { where: { isActive: true }, orderBy: { price: 'asc' } },
+          _count: { select: { reviews: true } },
+        },
+        take: limitNum,
+      });
+      total = products.length;
+      isFuzzy = true;
+    }
 
     // Compute avg rating, min/max price per product
     const enrichedProducts = await Promise.all(
@@ -131,6 +165,7 @@ router.get('/', async (req: Request, res: Response) => {
     res.json({
       success: true,
       data: enrichedProducts,
+      isFuzzy,
       pagination: {
         page: pageNum,
         limit: limitNum,
