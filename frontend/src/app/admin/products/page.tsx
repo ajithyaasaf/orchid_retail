@@ -44,9 +44,19 @@ export default function AdminProductsPage() {
   useEffect(() => { fetchProducts(); }, [fetchProducts]);
   useEffect(() => {
     adminApi.getCategories().then((res: any) => {
-      const flat: CategoryOption[] = [];
-      (res.data || []).forEach((parent: any) => { flat.push(parent); (parent.children || []).forEach((c: any) => flat.push(c)); });
-      setCategories(flat);
+      const hierarchy: CategoryOption[] = [];
+      (res.data || []).forEach((parent: any) => {
+        // Add parent
+        hierarchy.push(parent);
+        // Add children with a prefix for visual hierarchy
+        (parent.children || []).forEach((child: any) => {
+          hierarchy.push({
+            ...child,
+            name: `${parent.name} > ${child.name}`
+          });
+        });
+      });
+      setCategories(hierarchy);
     }).catch(console.error);
   }, []);
 

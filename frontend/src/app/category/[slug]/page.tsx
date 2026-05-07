@@ -192,20 +192,44 @@ export default function CategoryPage() {
             'w-64 shrink-0',
             'hidden lg:block',
           )}>
-            <div className="sticky top-24 space-y-6">
+            <div className="sticky top-24 space-y-8">
+              {/* Subcategories (Product Type) */}
+              {category?.children && category.children.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-semibold text-foreground mb-4 uppercase tracking-wider">Product Type</h3>
+                  <div className="space-y-2">
+                    {category.children.map((child: any) => (
+                      <Link
+                        key={child.id}
+                        href={`/category/${child.slug}`}
+                        className={cn(
+                          "block text-sm py-1 transition-colors hover:text-primary",
+                          slug === child.slug ? "text-primary font-bold" : "text-muted"
+                        )}
+                      >
+                        {child.name}
+                        {child._count?.products !== undefined && (
+                          <span className="ml-1.5 text-[10px] opacity-60">({child._count.products})</span>
+                        )}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Size filter */}
               <div>
-                <h3 className="text-sm font-semibold text-foreground mb-3">Size</h3>
+                <h3 className="text-sm font-semibold text-foreground mb-4 uppercase tracking-wider">Size</h3>
                 <div className="flex flex-wrap gap-2">
                   {SIZES.map(size => (
                     <button
                       key={size}
                       onClick={() => toggleSize(size)}
                       className={cn(
-                        'px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors',
+                        'px-3.5 py-2 rounded-lg border text-xs font-medium transition-all',
                         currentSizes.includes(size)
-                          ? 'bg-primary text-white border-primary'
-                          : 'border-border text-foreground hover:border-primary hover:text-primary'
+                          ? 'bg-primary text-white border-primary shadow-sm'
+                          : 'border-border text-foreground hover:border-primary hover:text-primary bg-white'
                       )}
                     >
                       {size}
@@ -216,23 +240,29 @@ export default function CategoryPage() {
 
               {/* Price filter */}
               <div>
-                <h3 className="text-sm font-semibold text-foreground mb-3">Price Range</h3>
+                <h3 className="text-sm font-semibold text-foreground mb-4 uppercase tracking-wider">Price Range</h3>
                 <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    placeholder="Min"
-                    value={currentMinPrice}
-                    onChange={(e) => updateFilters({ minPrice: e.target.value })}
-                    className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:border-primary"
-                  />
+                  <div className="relative flex-1">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted text-xs">₹</span>
+                    <input
+                      type="number"
+                      placeholder="Min"
+                      value={currentMinPrice}
+                      onChange={(e) => updateFilters({ minPrice: e.target.value })}
+                      className="w-full pl-7 pr-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary bg-white"
+                    />
+                  </div>
                   <span className="text-muted">—</span>
-                  <input
-                    type="number"
-                    placeholder="Max"
-                    value={currentMaxPrice}
-                    onChange={(e) => updateFilters({ maxPrice: e.target.value })}
-                    className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:border-primary"
-                  />
+                  <div className="relative flex-1">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted text-xs">₹</span>
+                    <input
+                      type="number"
+                      placeholder="Max"
+                      value={currentMaxPrice}
+                      onChange={(e) => updateFilters({ maxPrice: e.target.value })}
+                      className="w-full pl-7 pr-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary bg-white"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -241,26 +271,50 @@ export default function CategoryPage() {
           {/* Mobile filters (bottom sheet) */}
           {isFilterOpen && (
             <div className="lg:hidden fixed inset-0 z-50">
-              <div className="absolute inset-0 bg-black/50" onClick={() => setIsFilterOpen(false)} />
-              <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl p-6 max-h-[70vh] overflow-y-auto animate-fade-in">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-lg font-semibold">Filters</h2>
-                  <button onClick={() => setIsFilterOpen(false)} className="p-2"><X size={20} /></button>
+              <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsFilterOpen(false)} />
+              <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl p-6 max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom duration-300">
+                <div className="flex items-center justify-between mb-8">
+                  <h2 className="text-xl font-bold">Filters</h2>
+                  <button onClick={() => setIsFilterOpen(false)} className="p-2 bg-surface rounded-full"><X size={20} /></button>
                 </div>
 
+                {/* Subcategories Mobile */}
+                {category?.children && category.children.length > 0 && (
+                  <div className="mb-8">
+                    <h3 className="text-sm font-bold mb-4 uppercase tracking-wider">Product Type</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {category.children.map((child: any) => (
+                        <Link
+                          key={child.id}
+                          href={`/category/${child.slug}`}
+                          className={cn(
+                            "px-4 py-2.5 rounded-full border text-sm font-medium transition-all",
+                            slug === child.slug 
+                              ? "bg-primary text-white border-primary" 
+                              : "border-border bg-white"
+                          )}
+                          onClick={() => setIsFilterOpen(false)}
+                        >
+                          {child.name}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* Size */}
-                <div className="mb-6">
-                  <h3 className="text-sm font-semibold mb-3">Size</h3>
+                <div className="mb-8">
+                  <h3 className="text-sm font-bold mb-4 uppercase tracking-wider">Size</h3>
                   <div className="flex flex-wrap gap-2">
                     {SIZES.map(size => (
                       <button
                         key={size}
                         onClick={() => toggleSize(size)}
                         className={cn(
-                          'px-4 py-2 rounded-lg border text-sm font-medium transition-colors',
+                          'px-5 py-3 rounded-xl border text-sm font-semibold transition-all',
                           currentSizes.includes(size)
-                            ? 'bg-primary text-white border-primary'
-                            : 'border-border hover:border-primary'
+                            ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20'
+                            : 'border-border bg-white'
                         )}
                       >
                         {size}
@@ -270,29 +324,35 @@ export default function CategoryPage() {
                 </div>
 
                 {/* Price */}
-                <div className="mb-6">
-                  <h3 className="text-sm font-semibold mb-3">Price Range</h3>
-                  <div className="flex gap-3">
-                    <input
-                      type="number"
-                      placeholder="Min ₹"
-                      value={currentMinPrice}
-                      onChange={(e) => updateFilters({ minPrice: e.target.value })}
-                      className="w-full px-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary"
-                    />
-                    <input
-                      type="number"
-                      placeholder="Max ₹"
-                      value={currentMaxPrice}
-                      onChange={(e) => updateFilters({ maxPrice: e.target.value })}
-                      className="w-full px-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary"
-                    />
+                <div className="mb-8">
+                  <h3 className="text-sm font-bold mb-4 uppercase tracking-wider">Price Range</h3>
+                  <div className="flex gap-4">
+                    <div className="relative flex-1">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted">₹</span>
+                      <input
+                        type="number"
+                        placeholder="Min"
+                        value={currentMinPrice}
+                        onChange={(e) => updateFilters({ minPrice: e.target.value })}
+                        className="w-full pl-8 pr-4 py-3.5 border border-border rounded-xl text-sm focus:outline-none focus:border-primary bg-white"
+                      />
+                    </div>
+                    <div className="relative flex-1">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted">₹</span>
+                      <input
+                        type="number"
+                        placeholder="Max"
+                        value={currentMaxPrice}
+                        onChange={(e) => updateFilters({ maxPrice: e.target.value })}
+                        className="w-full pl-8 pr-4 py-3.5 border border-border rounded-xl text-sm focus:outline-none focus:border-primary bg-white"
+                      />
+                    </div>
                   </div>
                 </div>
 
                 <button
                   onClick={() => setIsFilterOpen(false)}
-                  className="w-full py-3 bg-primary text-white rounded-full font-semibold text-sm"
+                  className="w-full py-4 bg-primary text-white rounded-full font-bold text-base shadow-lg shadow-primary/20 transition-transform active:scale-95"
                 >
                   Show {total} Results
                 </button>

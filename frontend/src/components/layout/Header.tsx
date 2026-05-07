@@ -6,15 +6,12 @@ import { Search, ShoppingBag, Heart, User, Menu, X, ChevronDown } from 'lucide-r
 import { useCartStore } from '@/stores/cartStore';
 import { useWishlistStore } from '@/stores/wishlistStore';
 import { useAuthStore } from '@/stores/authStore';
+import { useCategoryStore } from '@/stores/categoryStore';
+import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
-const CATEGORIES = [
-  { name: 'New Born', slug: 'new-born' },
-  { name: 'Girls', slug: 'girls' },
-  { name: 'Boys', slug: 'boys' },
-  { name: 'Women', slug: 'women' },
-  { name: 'Mens', slug: 'mens' },
-];
+// Categories are managed via useCategoryStore
+
 
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -22,6 +19,7 @@ export default function Header() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isAccountOpen, setIsAccountOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchCategory, setSearchCategory] = useState('');
   const [isMegaMenuOpen, setIsMegaMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -29,10 +27,14 @@ export default function Header() {
   const openCartDrawer = useCartStore(s => s.openDrawer);
   const wishlistCount = useWishlistStore(s => s.items.length);
   const { user, checkAuth } = useAuthStore();
+  const { categories, fetchCategories } = useCategoryStore();
+  const pathname = usePathname();
+  const isAdmin = pathname?.startsWith('/admin');
 
   useEffect(() => {
     setMounted(true);
     checkAuth();
+    fetchCategories();
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
@@ -41,16 +43,20 @@ export default function Header() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      window.location.href = `/search?q=${encodeURIComponent(searchQuery.trim())}`;
+      let url = `/search?q=${encodeURIComponent(searchQuery.trim())}`;
+      if (searchCategory) url += `&category=${searchCategory}`;
+      window.location.href = url;
     }
   };
 
   return (
     <>
       {/* Top announcement bar */}
-      <div className="bg-primary text-white text-center py-1.5 text-xs md:text-sm font-medium tracking-wide">
-        🌸 Premium Export Quality Products at Factory Prices — Free Shipping Above ₹999
-      </div>
+      {!isAdmin && (
+        <div className="bg-primary text-white text-center py-1.5 text-xs md:text-sm font-medium tracking-wide">
+          🌸 Premium Export Quality Products at Factory Prices — Free Shipping Above ₹999
+        </div>
+      )}
 
       {/* Main header */}
       <header
@@ -98,57 +104,94 @@ export default function Header() {
 
               {/* Mega Menu */}
               {isMegaMenuOpen && (
-                <div className="absolute top-full left-0 w-[600px] bg-white shadow-xl rounded-b-xl border border-border/50 p-6 animate-fade-in">
-                  <div className="grid grid-cols-2 gap-4">
-                    {CATEGORIES.map(cat => (
-                      <Link
-                        key={cat.slug}
-                        href={`/category/${cat.slug}`}
-                        className="flex items-center gap-3 p-3 rounded-lg hover:bg-surface transition-colors group"
-                      >
-                        <div className="w-10 h-10 rounded-lg bg-primary-light flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors">
-                          🏷️
-                        </div>
-                        <span className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
+                <div className="absolute top-full left-[-200px] w-[1000px] bg-white shadow-2xl rounded-b-2xl border border-border/50 p-8 animate-in fade-in slide-in-from-top-2 duration-300">
+                  <div className="grid grid-cols-5 gap-8">
+                    {categories.filter(c => !c.parentId).map(cat => (
+                      <div key={cat.id} className="space-y-4">
+                        <Link
+                          href={`/category/${cat.slug}`}
+                          className="block text-sm font-bold text-primary hover:text-primary-dark transition-colors uppercase tracking-widest"
+                          onClick={() => setIsMegaMenuOpen(false)}
+                        >
                           {cat.name}
-                        </span>
-                      </Link>
+                        </Link>
+                        <div className="space-y-2">
+                          {cat.children?.slice(0, 8).map((child: any) => (
+                            <Link
+                              key={child.id}
+                              href={`/category/${child.slug}`}
+                              className="block text-xs text-muted hover:text-primary transition-colors"
+                              onClick={() => setIsMegaMenuOpen(false)}
+                            >
+                              {child.name}
+                            </Link>
+                          ))}
+                          {cat.children && cat.children.length > 8 && (
+                            <Link
+                              href={`/category/${cat.slug}`}
+                              className="block text-[10px] font-bold text-primary/60 hover:text-primary transition-colors underline"
+                              onClick={() => setIsMegaMenuOpen(false)}
+                            >
+                              View All
+                            </Link>
+                          )}
+                        </div>
+                      </div>
                     ))}
                   </div>
                 </div>
               )}
             </div>
 
-            <Link href="/category/new-born" className="px-3 py-2 text-sm font-medium text-foreground hover:text-primary transition-colors">
-              New Born
-            </Link>
-            <Link href="/category/girls" className="px-3 py-2 text-sm font-medium text-foreground hover:text-primary transition-colors">
-              Girls
-            </Link>
-            <Link href="/category/boys" className="px-3 py-2 text-sm font-medium text-foreground hover:text-primary transition-colors">
-              Boys
-            </Link>
-            <Link href="/category/women" className="px-3 py-2 text-sm font-medium text-foreground hover:text-primary transition-colors">
-              Women
-            </Link>
-            <Link href="/category/mens" className="px-3 py-2 text-sm font-medium text-foreground hover:text-primary transition-colors">
-              Mens
-            </Link>
+            {categories.slice(0, 5).map(cat => (
+              <Link 
+                key={cat.slug}
+                href={`/category/${cat.slug}`} 
+                className="px-3 py-2 text-sm font-medium text-foreground hover:text-primary transition-colors uppercase"
+              >
+                {cat.name}
+              </Link>
+            ))}
           </nav>
 
           {/* Desktop Search */}
-          <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-md mx-6">
-            <div className="relative w-full">
-              <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
-              <input
-                type="text"
-                placeholder="Search products..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-surface rounded-full text-sm border border-transparent focus:border-primary focus:bg-white focus:outline-none transition-all"
-              />
-            </div>
-          </form>
+          <div className="hidden md:flex flex-1 max-w-lg mx-6 relative group">
+            <form onSubmit={handleSearch} className="w-full flex items-center bg-surface rounded-full border border-transparent focus-within:border-primary focus-within:bg-white transition-all shadow-sm">
+              {/* Category Scope */}
+              <div className="relative shrink-0">
+                <select 
+                  className="appearance-none bg-transparent pl-5 pr-8 py-2.5 text-xs font-bold text-foreground cursor-pointer focus:outline-none border-r border-border/50"
+                  value={searchCategory}
+                  onChange={(e) => setSearchCategory(e.target.value)}
+                >
+                  <option value="">All Categories</option>
+                  {categories.filter(c => !c.parentId).map(cat => (
+                    <option key={cat.id} value={cat.slug}>{cat.name}</option>
+                  ))}
+                </select>
+                <ChevronDown size={10} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
+              </div>
+
+              {/* Input */}
+              <div className="relative flex-1">
+                <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+                <input
+                  type="text"
+                  placeholder="Search for products, brands and more..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 bg-transparent text-sm focus:outline-none"
+                />
+              </div>
+              
+              <button 
+                type="submit"
+                className="mr-1.5 p-1.5 bg-primary text-white rounded-full hover:bg-primary-dark transition-colors shadow-lg shadow-primary/20"
+              >
+                <Search size={16} />
+              </button>
+            </form>
+          </div>
 
           {/* Right actions */}
           <div className="flex items-center gap-1 md:gap-2">
@@ -266,19 +309,40 @@ export default function Header() {
 
         {/* Mobile search bar (expandable) */}
         {isSearchOpen && (
-          <div className="md:hidden border-t border-border px-4 py-3 animate-fade-in">
-            <form onSubmit={handleSearch}>
-              <div className="relative">
-                <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
-                <input
-                  type="text"
-                  placeholder="Search products..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-surface rounded-full text-sm border border-transparent focus:border-primary focus:outline-none"
-                  autoFocus
-                />
+          <div className="md:hidden border-t border-border px-4 py-3 animate-fade-in bg-white shadow-lg">
+            <form onSubmit={handleSearch} className="space-y-3">
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+                  <input
+                    type="text"
+                    placeholder="Search products..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 bg-surface rounded-xl text-sm focus:outline-none border border-transparent focus:border-primary transition-all"
+                    autoFocus
+                  />
+                </div>
               </div>
+              <div className="relative">
+                <select 
+                  className="w-full appearance-none bg-surface pl-4 pr-10 py-2.5 rounded-xl text-xs font-bold text-foreground focus:outline-none border border-transparent focus:border-primary transition-all"
+                  value={searchCategory}
+                  onChange={(e) => setSearchCategory(e.target.value)}
+                >
+                  <option value="">All Categories</option>
+                  {categories.filter(c => !c.parentId).map(cat => (
+                    <option key={cat.id} value={cat.slug}>{cat.name}</option>
+                  ))}
+                </select>
+                <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
+              </div>
+              <button 
+                type="submit"
+                className="w-full py-3 bg-primary text-white rounded-xl font-bold text-sm shadow-lg shadow-primary/20 active:scale-95 transition-transform"
+              >
+                Search Now
+              </button>
             </form>
           </div>
         )}
@@ -287,11 +351,11 @@ export default function Header() {
         {isMobileMenuOpen && (
           <div className="lg:hidden border-t border-border bg-white animate-fade-in max-h-[70vh] overflow-y-auto">
             <nav className="container py-4 space-y-1">
-              {CATEGORIES.map(cat => (
+              {categories.filter(c => !c.parentId).map(cat => (
                 <Link
                   key={cat.slug}
                   href={`/category/${cat.slug}`}
-                  className="block px-4 py-3 text-sm font-medium text-foreground hover:text-primary hover:bg-surface rounded-lg transition-colors"
+                  className="block px-4 py-3 text-sm font-bold text-foreground hover:text-primary hover:bg-surface rounded-lg transition-colors uppercase"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   {cat.name}
