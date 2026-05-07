@@ -36,7 +36,7 @@ export default function Header() {
     setMounted(true);
     checkAuth();
     fetchCategories();
-    
+
     // Load recent searches
     const history = JSON.parse(localStorage.getItem('recentSearches') || '[]');
     setRecentSearches(history);
@@ -57,8 +57,8 @@ export default function Header() {
     localStorage.setItem('recentSearches', JSON.stringify(newHistory));
 
     // Check for direct category match
-    const directMatch = categories.find(c => 
-      c.name.toLowerCase() === query.toLowerCase() || 
+    const directMatch = categories.find(c =>
+      c.name.toLowerCase() === query.toLowerCase() ||
       c.slug.toLowerCase() === query.toLowerCase()
     );
 
@@ -164,9 +164,9 @@ export default function Header() {
             </div>
 
             {categories.slice(0, 5).map(cat => (
-              <Link 
+              <Link
                 key={cat.slug}
-                href={`/category/${cat.slug}`} 
+                href={`/category/${cat.slug}`}
                 className="px-3 py-2 text-sm font-medium text-foreground hover:text-primary transition-colors uppercase"
               >
                 {cat.name}
@@ -199,7 +199,7 @@ export default function Header() {
                     <h3 className="text-[10px] font-bold text-muted uppercase tracking-widest flex items-center gap-2">
                       <Clock size={12} /> Recent Searches
                     </h3>
-                    <button 
+                    <button
                       onClick={() => {
                         localStorage.removeItem('recentSearches');
                         setRecentSearches([]);
@@ -243,7 +243,7 @@ export default function Header() {
             <Link href="/account/wishlist" className="relative p-2 text-foreground hover:text-primary transition-colors">
               <Heart size={22} />
               {mounted && wishlistCount > 0 && (
-                <span 
+                <span
                   className="absolute -top-0.5 -right-0.5 bg-primary text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1"
                   style={{ minWidth: '18px', height: '18px' }}
                 >
@@ -260,7 +260,7 @@ export default function Header() {
             >
               <ShoppingBag size={22} />
               {mounted && cartItems() > 0 && (
-                <span 
+                <span
                   className="absolute -top-0.5 -right-0.5 bg-primary text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1"
                   style={{ minWidth: '18px', height: '18px' }}
                 >
@@ -272,7 +272,7 @@ export default function Header() {
             {/* Account */}
             {mounted && user ? (
               <div className="relative hidden md:block">
-                <button 
+                <button
                   onClick={() => setIsAccountOpen(!isAccountOpen)}
                   className={cn(
                     "flex items-center gap-2 px-3 py-1.5 rounded-full transition-all duration-200",
@@ -302,8 +302,8 @@ export default function Header() {
                       </div>
                       {(user.role === 'admin' || user.role === 'super_admin') && (
                         <>
-                          <Link 
-                            href="/admin" 
+                          <Link
+                            href="/admin"
                             onClick={() => setIsAccountOpen(false)}
                             className="flex items-center gap-3 px-4 py-2.5 text-sm font-bold text-primary hover:bg-primary/5 transition-colors"
                           >
@@ -321,7 +321,7 @@ export default function Header() {
                         <Heart size={16} /> Wishlist
                       </Link>
                       <div className="mx-4 my-1 border-t border-border/50" />
-                      <button 
+                      <button
                         onClick={() => {
                           useAuthStore.getState().logout();
                           setIsAccountOpen(false);
