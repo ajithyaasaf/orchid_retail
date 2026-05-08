@@ -196,12 +196,18 @@ export default function ProductClient({ product }: ProductClientProps) {
 
   const handleAddToCart = () => {
     if (!selectedVariant || isOutOfStock) return;
+    
+    // Best Practice: Use the variant-specific image for the cart display
+    const cartImage = (selectedVariant.imageIndex !== undefined && product.images[selectedVariant.imageIndex])
+      ? product.images[selectedVariant.imageIndex]
+      : product.images[0] || '';
+
     addItem({
       productId: product.id,
       variantId: selectedVariant.id,
       quantity,
       productName: product.name,
-      productImage: product.images[0] || '',
+      productImage: cartImage,
       productSlug: product.slug,
       variantSize: selectedVariant.size,
       variantColor: selectedVariant.color,

@@ -84,11 +84,16 @@ export default function ComboDetailPage() {
 
     const subItems = combo.products.map(cp => {
       const variant = cp.product.variants.find(v => v.id === selections[cp.id])!;
+      // Use variant-specific image if available
+      const variantImage = (variant.imageIndex !== undefined && cp.product.images[variant.imageIndex])
+        ? cp.product.images[variant.imageIndex]
+        : cp.product.images[0] || '';
+
       return {
         productId: cp.product.id,
         variantId: variant.id,
         productName: cp.product.name,
-        productImage: cp.product.images?.[0],
+        productImage: variantImage,
         variantSize: variant.size,
         variantColor: variant.color,
         sku: variant.sku,
