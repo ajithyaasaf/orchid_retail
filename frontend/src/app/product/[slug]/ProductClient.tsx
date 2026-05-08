@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Heart, ShoppingBag, Truck, RotateCcw, Shield, Star, ChevronRight, Minus, Plus, Check } from 'lucide-react';
 import { useCartStore } from '@/stores/cartStore';
 import { useWishlistStore } from '@/stores/wishlistStore';
@@ -17,6 +18,7 @@ interface VariantData {
   mrp: number;
   stock: number;
   reservedStock: number;
+  imageIndex: number;
   sku: string;
 }
 
@@ -57,13 +59,37 @@ interface ProductClientProps {
 }
 
 export default function ProductClient({ product }: ProductClientProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Initial values from URL or first available in-stock variant
+  const getInitialValue = (param: string, type: 'size' | 'color') => {
+    const fromUrl = searchParams.get(param);
+    if (fromUrl) {
+      const exists = product.variants.some(v => 
+        (type === 'size' ? v.size : v.color).toLowerCase() === fromUrl.toLowerCase()
+      );
+      if (exists) return fromUrl;
+    }
+    
+    const firstInStock = product.variants.find(v => (v.stock - v.reservedStock) > 0);
+    if (type === 'size') return firstInStock?.size || product.variants[0]?.size || '';
+    return firstInStock?.color || product.variants[0]?.color || '';
+  };
+
   const [selectedImage, setSelectedImage] = useState(0);
-  const [selectedSize, setSelectedSize] = useState<string>(
-    product?.variants?.find(v => v.stock > 0)?.size || product?.variants?.[0]?.size || ''
-  );
-  const [selectedColor, setSelectedColor] = useState<string>(
-    product?.variants?.find(v => v.stock > 0)?.color || product?.variants?.[0]?.color || ''
-  );
+  const [selectedSize, setSelectedSize] = useState<string>(getInitialValue('size', 'size'));
+  const [selectedColor, setSelectedColor] = useState<string>(getInitialValue('color', 'color'));
+  
+  // Sync selection to URL (shallow)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      params.set('size', selectedSize);
+      params.set('color', selectedColor);
+      window.history.replaceState(null, '', `?${params.toString()}`);
+    }
+  }, [selectedSize, selectedColor]);
   
   // Color mapping for swatches
   const colorMap: Record<string, string> = {
@@ -86,7 +112,17 @@ export default function ProductClient({ product }: ProductClientProps) {
 
   const getColorHex = (colorName: string) => {
     const normalized = colorName.toLowerCase().trim();
-    return colorMap[normalized] || '#cccccc';
+    
+    // Exact match first
+    if (colorMap[normalized]) return colorMap[normalized];
+    
+    // Fuzzy match (e.g. "Sky Blue" -> "blue")
+    const words = normalized.split(/\s+/);
+    for (const word of words) {
+      if (colorMap[word]) return colorMap[word];
+    }
+    
+    return '#cccccc';
   };
   const [quantity, setQuantity] = useState(1);
   const [openAccordion, setOpenAccordion] = useState('description');
@@ -258,6 +294,7 @@ export default function ProductClient({ product }: ProductClientProps) {
 
                     const handleColorClick = () => {
                       setSelectedColor(v.color);
+                      
                       // Auto-switch size if current size isn't available in new color
                       if (!availableInSelectedSize) {
                         const firstAvailableSize = product.variants.find(
@@ -265,6 +302,20 @@ export default function ProductClient({ product }: ProductClientProps) {
                           (pv.stock - pv.reservedStock) > 0
                         )?.size;
                         if (firstAvailableSize) setSelectedSize(firstAvailableSize);
+                      }
+
+                      // Explicit Image Mapping: Jump to the image index defined in the admin
+                      if (v.imageIndex !== undefined && product.images[v.imageIndex]) {
+                        setSelectedImage(v.imageIndex);
+                      } else {
+                        // Fallback to Smart Image Matching if index is default/0
+                        const colorName = v.color.toLowerCase().trim();
+                        const matchingImageIndex = product.images.findIndex(img => 
+                          img.toLowerCase().includes(colorName)
+                        );
+                        if (matchingImageIndex !== -1) {
+                          setSelectedImage(matchingImageIndex);
+                        }
                       }
                     };
 

@@ -69,6 +69,7 @@ model Variant {
   mrp           Float       // Max retail price
   stock         Int         @default(0)
   reservedStock Int         @default(0)
+  imageIndex    Int         @default(0)
   isActive      Boolean     @default(true)
   orderItems    OrderItem[]
   createdAt     DateTime    @default(now())

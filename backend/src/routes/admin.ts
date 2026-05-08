@@ -99,7 +99,7 @@ router.post('/products', async (req: Request, res: Response) => {
       data: {
         name, slug, description: description || '', categoryId, images: images || [], tags: tags || [],
         exportBadge: exportBadge || false, isFeatured: isFeatured || false,
-        variants: { create: variants.map((v: any) => ({ sku: v.sku, size: v.size, color: v.color, colorHex: v.colorHex, price: v.price, mrp: v.mrp, stock: v.stock || 0, reservedStock: 0 })) },
+        variants: { create: variants.map((v: any) => ({ sku: v.sku, size: v.size, color: v.color, colorHex: v.colorHex, price: Number(v.price), mrp: Number(v.mrp), stock: Number(v.stock) || 0, imageIndex: Number(v.imageIndex) || 0, reservedStock: 0 })) },
       },
       include: { variants: true, category: true },
     });
@@ -112,12 +112,65 @@ router.post('/products', async (req: Request, res: Response) => {
 
 router.put('/products/:id', async (req: Request, res: Response) => {
   try {
-    const { name, slug, description, categoryId, images, tags, exportBadge, isFeatured, isActive } = req.body;
-    const product = await prisma.product.update({
-      where: { id: req.params.id },
-      data: { ...(name && { name }), ...(slug && { slug }), ...(description !== undefined && { description }), ...(categoryId && { categoryId }), ...(images && { images }), ...(tags && { tags }), ...(exportBadge !== undefined && { exportBadge }), ...(isFeatured !== undefined && { isFeatured }), ...(isActive !== undefined && { isActive }) },
-      include: { variants: true, category: true },
+    const { name, slug, description, categoryId, images, tags, exportBadge, isFeatured, isActive, variants } = req.body;
+    
+    // Update product and handle variants
+    const product = await prisma.$transaction(async (tx) => {
+      // 1. Update product basic info
+      const p = await tx.product.update({
+        where: { id: req.params.id },
+        data: { 
+          ...(name && { name }), 
+          ...(slug && { slug }), 
+          ...(description !== undefined && { description }), 
+          ...(categoryId && { categoryId }), 
+          ...(images && { images }), 
+          ...(tags && { tags }), 
+          ...(exportBadge !== undefined && { exportBadge }), 
+          ...(isFeatured !== undefined && { isFeatured }), 
+          ...(isActive !== undefined && { isActive }) 
+        },
+      });
+
+      // 2. Update variants if provided
+      if (variants && Array.isArray(variants)) {
+        console.log(`[AdminAPI] Updating ${variants.length} variants for product ${p.id}`);
+        for (const v of variants) {
+          const variantData = {
+            sku: v.sku,
+            size: v.size,
+            color: v.color,
+            colorHex: v.colorHex,
+            price: Number(v.price),
+            mrp: Number(v.mrp),
+            stock: Number(v.stock),
+            imageIndex: Number(v.imageIndex) || 0,
+            isActive: v.isActive !== undefined ? v.isActive : true
+          };
+
+          console.log(`[AdminAPI] Variant SKU: ${v.sku}, ImageIndex: ${variantData.imageIndex}, ID: ${v.id || 'NEW'}`);
+
+          if (v.id) {
+            // Update existing
+            await tx.variant.update({
+              where: { id: v.id },
+              data: variantData
+            });
+          } else {
+            // Create new
+            await tx.variant.create({
+              data: {
+                ...variantData,
+                productId: p.id,
+                reservedStock: 0
+              }
+            });
+          }
+        }
+      }
+      return p;
     });
+
     res.json({ success: true, data: product });
   } catch (error) { console.error('Error updating product:', error); res.status(500).json({ success: false, error: 'Failed to update product' }); }
 });
@@ -144,10 +197,20 @@ router.post('/products/:id/variants', async (req: Request, res: Response) => {
 
 router.put('/variants/:id', async (req: Request, res: Response) => {
   try {
-    const { price, mrp, stock, isActive, size, color, colorHex, sku } = req.body;
+    const { price, mrp, stock, isActive, size, color, colorHex, sku, imageIndex } = req.body;
     const variant = await prisma.variant.update({
       where: { id: req.params.id },
-      data: { ...(price !== undefined && { price }), ...(mrp !== undefined && { mrp }), ...(stock !== undefined && { stock }), ...(isActive !== undefined && { isActive }), ...(size && { size }), ...(color && { color }), ...(colorHex && { colorHex }), ...(sku && { sku }) },
+      data: { 
+        ...(price !== undefined && { price: Number(price) }), 
+        ...(mrp !== undefined && { mrp: Number(mrp) }), 
+        ...(stock !== undefined && { stock: Number(stock) }), 
+        ...(isActive !== undefined && { isActive }), 
+        ...(size && { size }), 
+        ...(color && { color }), 
+        ...(colorHex && { colorHex }), 
+        ...(sku && { sku }),
+        ...(imageIndex !== undefined && { imageIndex: Number(imageIndex) })
+      },
     });
     res.json({ success: true, data: variant });
   } catch (error) { console.error('Error updating variant:', error); res.status(500).json({ success: false, error: 'Failed to update variant' }); }

@@ -6,7 +6,7 @@ import { formatPrice, cn, generateSlug } from '@/lib/utils';
 import { Plus, Edit, Trash2, Package, Search, X, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
 import ImageUpload from '@/components/admin/ImageUpload';
 
-interface VariantData { id?: string; sku: string; size: string; color: string; colorHex?: string; price: number; mrp: number; stock: number; isActive?: boolean; }
+interface VariantData { id?: string; sku: string; size: string; color: string; colorHex?: string; price: number; mrp: number; stock: number; imageIndex?: number; isActive?: boolean; }
 interface ProductData {
   id: string; name: string; slug: string; description: string; images: string[];
   isActive: boolean; isFeatured: boolean; exportBadge: boolean; tags: string[];
@@ -15,7 +15,7 @@ interface ProductData {
 }
 interface CategoryOption { id: string; name: string; slug: string; children?: CategoryOption[] }
 
-const EMPTY_VARIANT: VariantData = { sku: '', size: '', color: '', colorHex: '', price: 0, mrp: 0, stock: 0 };
+const EMPTY_VARIANT: VariantData = { sku: '', size: '', color: '', colorHex: '', price: 0, mrp: 0, stock: 0, imageIndex: 0 };
 
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<ProductData[]>([]);
@@ -83,11 +83,22 @@ export default function AdminProductsPage() {
     setSaving(true); setFormError('');
     try {
       const slug = form.slug || generateSlug(form.name);
+      console.log('[Admin] Saving product with variants:', variants);
       const data = {
         name: form.name, slug, description: form.description, categoryId: form.categoryId,
         images: form.images.filter(Boolean), tags: form.tags.split(',').map(t => t.trim()).filter(Boolean),
         exportBadge: form.exportBadge, isFeatured: form.isFeatured,
-        variants: validVariants.map(v => ({ sku: v.sku || `${slug}-${v.size}-${v.color}`.toLowerCase().replace(/\s+/g, '-'), size: v.size, color: v.color, colorHex: v.colorHex, price: Number(v.price), mrp: Number(v.mrp), stock: Number(v.stock) })),
+        variants: validVariants.map(v => ({ 
+          id: v.id,
+          sku: v.sku || `${slug}-${v.size}-${v.color}`.toLowerCase().replace(/\s+/g, '-'), 
+          size: v.size, 
+          color: v.color, 
+          colorHex: v.colorHex, 
+          price: Number(v.price), 
+          mrp: Number(v.mrp), 
+          stock: Number(v.stock),
+          imageIndex: Number(v.imageIndex || 0)
+        })),
       };
       if (editingProduct) { await adminApi.updateProduct(editingProduct.id, data); }
       else { await adminApi.createProduct(data); }
@@ -183,6 +194,7 @@ export default function AdminProductsPage() {
                               <div key={v.id} className="flex items-center border-b border-border text-xs px-4 py-2">
                                 <div className="pl-12 flex-1 text-muted">{v.sku}</div>
                                 <div className="px-4 hidden md:block">{v.size} / {v.color}</div>
+                                <div className="px-4 text-center">Img #{(v.imageIndex || 0) + 1}</div>
                                 <div className="px-4 text-right">{formatPrice(v.price)}</div>
                                 <div className="px-4 text-right">
                                   <input type="number" defaultValue={v.stock} min={0} className="w-16 px-2 py-1 border border-border rounded text-xs text-right focus:outline-none focus:border-primary"
@@ -292,6 +304,7 @@ export default function AdminProductsPage() {
                       <div><label className="text-[10px] text-muted block mb-0.5">Price</label><input type="number" value={v.price} onChange={e => { const vv = [...variants]; vv[i] = { ...vv[i], price: Number(e.target.value) }; setVariants(vv); }} className="w-full px-2 py-1.5 border border-border rounded text-xs focus:outline-none focus:border-primary" /></div>
                       <div><label className="text-[10px] text-muted block mb-0.5">MRP</label><input type="number" value={v.mrp} onChange={e => { const vv = [...variants]; vv[i] = { ...vv[i], mrp: Number(e.target.value) }; setVariants(vv); }} className="w-full px-2 py-1.5 border border-border rounded text-xs focus:outline-none focus:border-primary" /></div>
                       <div><label className="text-[10px] text-muted block mb-0.5">Stock</label><input type="number" value={v.stock} onChange={e => { const vv = [...variants]; vv[i] = { ...vv[i], stock: Number(e.target.value) }; setVariants(vv); }} className="w-full px-2 py-1.5 border border-border rounded text-xs focus:outline-none focus:border-primary" /></div>
+                      <div><label className="text-[10px] text-muted block mb-0.5 font-bold text-primary">Img #</label><input type="number" min={1} max={6} value={(v.imageIndex || 0) + 1} onChange={e => { const vv = [...variants]; const val = Math.max(0, Number(e.target.value) - 1); console.log(`Changing variant ${i} imageIndex to ${val}`); vv[i] = { ...vv[i], imageIndex: val }; setVariants(vv); }} className="w-full px-2 py-1.5 border-2 border-primary/20 rounded text-xs font-bold focus:outline-none focus:border-primary bg-primary/5" /></div>
                       <div>{variants.length > 1 && <button onClick={() => setVariants(variants.filter((_, j) => j !== i))} className="p-1.5 text-error hover:bg-error/10 rounded"><X size={12} /></button>}</div>
                     </div>
                   ))}
