@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { adminApi } from '@/lib/api';
 import { formatPrice, cn, generateSlug } from '@/lib/utils';
 import { Plus, Edit, Trash2, Package, Search, X, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
+import ImageUpload from '@/components/admin/ImageUpload';
 
 interface VariantData { id?: string; sku: string; size: string; color: string; colorHex?: string; price: number; mrp: number; stock: number; isActive?: boolean; }
 interface ProductData {
@@ -255,15 +256,12 @@ export default function AdminProductsPage() {
               </div>
 
               <div>
-                <label className="text-xs font-medium text-muted mb-1 block">Image URLs</label>
-                {form.images.map((img, i) => (
-                  <div key={i} className="flex gap-2 mb-2">
-                    <input value={img} onChange={e => { const imgs = [...form.images]; imgs[i] = e.target.value; setForm({ ...form, images: imgs }); }}
-                      placeholder="https://..." className="flex-1 px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:border-primary" />
-                    {form.images.length > 1 && <button onClick={() => setForm({ ...form, images: form.images.filter((_, j) => j !== i) })} className="text-error p-1"><X size={14} /></button>}
-                  </div>
-                ))}
-                <button onClick={() => setForm({ ...form, images: [...form.images, ''] })} className="text-xs text-primary font-medium">+ Add Image URL</button>
+                <label className="text-xs font-medium text-muted mb-2 block">Product Images *</label>
+                <ImageUpload 
+                  images={form.images} 
+                  onChange={(urls) => setForm({ ...form, images: urls })} 
+                  maxImages={6} 
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-4">

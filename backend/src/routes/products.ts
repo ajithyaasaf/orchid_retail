@@ -43,7 +43,15 @@ router.get('/', async (req: Request, res: Response) => {
     }
 
     if (category) {
-      where.category = { slug: category as string };
+      const cat = await prisma.category.findUnique({
+        where: { slug: category as string },
+        include: { children: { select: { slug: true } } }
+      });
+      
+      if (cat) {
+        const slugs = [cat.slug, ...(cat.children?.map(c => c.slug) || [])];
+        where.category = { slug: { in: slugs } };
+      }
     }
 
     if (search) {

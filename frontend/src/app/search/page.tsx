@@ -33,6 +33,8 @@ function SearchContent() {
   const [currentSizes, setCurrentSizes] = useState<string[]>([]);
   const [currentMinPrice, setCurrentMinPrice] = useState('');
   const [currentMaxPrice, setCurrentMaxPrice] = useState('');
+  const [debouncedMinPrice, setDebouncedMinPrice] = useState('');
+  const [debouncedMaxPrice, setDebouncedMaxPrice] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
 
   const { categories, fetchCategories } = useCategoryStore();
@@ -44,8 +46,8 @@ function SearchContent() {
       search: query, 
       category: selectedCategory || undefined,
       sizes: currentSizes.length > 0 ? currentSizes.join(',') : undefined,
-      minPrice: currentMinPrice || undefined,
-      maxPrice: currentMaxPrice || undefined,
+      minPrice: debouncedMinPrice || undefined,
+      maxPrice: debouncedMaxPrice || undefined,
       sort: currentSort,
       limit: 40 
     })
@@ -64,7 +66,16 @@ function SearchContent() {
 
   useEffect(() => {
     fetchResults();
-  }, [query, selectedCategory, currentSizes, currentMinPrice, currentMaxPrice, currentSort]);
+  }, [query, selectedCategory, currentSizes, debouncedMinPrice, debouncedMaxPrice, currentSort]);
+
+  // Debounce Price Inputs (1s delay to save server resources)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedMinPrice(currentMinPrice);
+      setDebouncedMaxPrice(currentMaxPrice);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [currentMinPrice, currentMaxPrice]);
 
   const toggleSize = (size: string) => {
     setCurrentSizes(prev => prev.includes(size) ? prev.filter(s => s !== size) : [...prev, size]);
