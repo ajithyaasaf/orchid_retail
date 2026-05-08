@@ -9,7 +9,7 @@ import ImageUpload from '@/components/admin/ImageUpload';
 interface VariantData { id?: string; sku: string; size: string; color: string; colorHex?: string; price: number; mrp: number; stock: number; imageIndex?: number; isActive?: boolean; }
 interface ProductData {
   id: string; name: string; slug: string; description: string; images: string[];
-  isActive: boolean; isFeatured: boolean; exportBadge: boolean; tags: string[];
+  isActive: boolean; isFeatured: boolean; exportBadge: boolean; freeShipping: boolean; tags: string[];
   categoryId: string; category?: { name: string; slug: string };
   variants: VariantData[];
 }
@@ -63,14 +63,14 @@ export default function AdminProductsPage() {
 
   const openCreateModal = () => {
     setEditingProduct(null);
-    setForm({ name: '', slug: '', description: '', categoryId: '', images: [], tags: '', exportBadge: false, isFeatured: false });
+    setForm({ name: '', slug: '', description: '', categoryId: '', images: [] as string[], tags: '', exportBadge: false, isFeatured: false, freeShipping: false });
     setVariants([{ ...EMPTY_VARIANT }]);
     setFormError(''); setShowModal(true);
   };
 
   const openEditModal = (p: ProductData) => {
     setEditingProduct(p);
-    setForm({ name: p.name, slug: p.slug, description: p.description, categoryId: p.categoryId, images: p.images.length ? p.images : [''], tags: p.tags.join(', '), exportBadge: p.exportBadge, isFeatured: p.isFeatured });
+    setForm({ name: p.name, slug: p.slug, description: p.description, categoryId: p.categoryId, images: p.images.length ? p.images : [] as string[], tags: p.tags.join(', '), exportBadge: p.exportBadge, isFeatured: p.isFeatured, freeShipping: !!p.freeShipping });
     setVariants(p.variants.map(v => ({ ...v })));
     setFormError(''); setShowModal(true);
   };

@@ -17,6 +17,7 @@ interface Variant {
   price: number;
   mrp: number;
   stock: number;
+  imageIndex?: number;
 }
 
 interface ComboProduct {

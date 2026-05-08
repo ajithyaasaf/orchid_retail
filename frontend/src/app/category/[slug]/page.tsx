@@ -38,7 +38,7 @@ export default function CategoryPage() {
   const slug = params.slug as string;
 
   const [products, setProducts] = useState<ProductData[]>([]);
-  const [category, setCategory] = useState<{ name: string; description?: string } | null>(null);
+  const [category, setCategory] = useState<{ name: string; description?: string; children?: { id: string; slug: string; name: string; _count?: { products: number } }[] } | null>(null);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -76,7 +76,7 @@ export default function CategoryPage() {
   useEffect(() => {
     categoryApi.getBySlug(slug)
       .then((res: unknown) => {
-        const r = res as { data: { name: string; description?: string } };
+        const r = res as { data: { name: string; description?: string; children?: { id: string; slug: string; name: string; _count?: { products: number } }[] } };
         setCategory(r.data);
       })
       .catch(() => setCategory({ name: slug.replace(/-/g, ' ') }));
