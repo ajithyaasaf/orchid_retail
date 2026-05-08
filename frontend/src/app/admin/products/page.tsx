@@ -88,14 +88,14 @@ export default function AdminProductsPage() {
         name: form.name, slug, description: form.description, categoryId: form.categoryId,
         images: form.images.filter(Boolean), tags: form.tags.split(',').map(t => t.trim()).filter(Boolean),
         exportBadge: form.exportBadge, isFeatured: form.isFeatured,
-        variants: validVariants.map(v => ({ 
+        variants: validVariants.map(v => ({
           id: v.id,
-          sku: v.sku || `${slug}-${v.size}-${v.color}`.toLowerCase().replace(/\s+/g, '-'), 
-          size: v.size, 
-          color: v.color, 
-          colorHex: v.colorHex, 
-          price: Number(v.price), 
-          mrp: Number(v.mrp), 
+          sku: v.sku || `${slug}-${v.size}-${v.color}`.toLowerCase().replace(/\s+/g, '-'),
+          size: v.size,
+          color: v.color,
+          colorHex: v.colorHex,
+          price: Number(v.price),
+          mrp: Number(v.mrp),
           stock: Number(v.stock),
           imageIndex: Number(v.imageIndex || 0)
         })),
@@ -269,10 +269,10 @@ export default function AdminProductsPage() {
 
               <div>
                 <label className="text-xs font-medium text-muted mb-2 block">Product Images *</label>
-                <ImageUpload 
-                  images={form.images} 
-                  onChange={(urls) => setForm({ ...form, images: urls })} 
-                  maxImages={6} 
+                <ImageUpload
+                  images={form.images}
+                  onChange={(urls) => setForm({ ...form, images: urls })}
+                  maxImages={6}
                 />
               </div>
 
