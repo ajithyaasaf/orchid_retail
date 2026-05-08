@@ -56,7 +56,16 @@ export default function ComboDetailPage() {
     const fetchCombo = async () => {
       try {
         const res = await comboApi.getBySlug(slug as string) as any;
-        setCombo(res.data);
+        const data = res.data as ComboData;
+        setCombo(data);
+
+        // Auto-select first in-stock variant for each product
+        const initialSelections: Record<string, string> = {};
+        data.products.forEach(cp => {
+          const firstInStock = cp.product.variants.find(v => (v.stock) > 0) || cp.product.variants[0];
+          if (firstInStock) initialSelections[cp.id] = firstInStock.id;
+        });
+        setSelections(initialSelections);
       } catch (e: any) {
         setError(e.message || 'Failed to fetch bundle details');
       }
@@ -180,32 +189,15 @@ export default function ComboDetailPage() {
                         <p className="text-xs text-muted mb-6">Choose your variation below</p>
                         
                         <div className="space-y-6">
-                          {/* Variant Selectors */}
-                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                            {cp.product.variants.map((v) => (
-                              <button
-                                key={v.id}
-                                onClick={() => setSelections(prev => ({ ...prev, [cp.id]: v.id }))}
-                                className={cn(
-                                  "relative p-3 rounded-xl border-2 text-left transition-all",
-                                  selections[cp.id] === v.id
-                                    ? "border-primary bg-primary/5 shadow-sm"
-                                    : "border-border hover:border-primary/30"
-                                )}
-                              >
-                                <div className="text-[10px] font-bold text-muted uppercase mb-1">{v.color}</div>
-                                <div className="text-sm font-black">{v.size}</div>
-                                {selections[cp.id] === v.id && (
-                                  <div className="absolute top-2 right-2 text-primary">
-                                    <CheckCircle2 size={14} />
-                                  </div>
-                                )}
-                              </button>
-                            ))}
-                          </div>
+                          {/* Variant Selectors - Improved logic */}
+                          <ComboVariantSelector 
+                            variants={cp.product.variants} 
+                            selectedVariantId={selections[cp.id]}
+                            onSelect={(vId) => setSelections(prev => ({ ...prev, [cp.id]: vId }))}
+                          />
                         </div>
                       </div>
-                      <div className="w-16 h-20 rounded-xl overflow-hidden bg-surface shrink-0">
+                      <div className="w-16 h-20 rounded-xl overflow-hidden bg-surface shrink-0 shadow-sm">
                         <img src={cp.product.images?.[0]} alt="" className="w-full h-full object-cover" />
                       </div>
                     </div>
@@ -261,6 +253,109 @@ export default function ComboDetailPage() {
               </div>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ComboVariantSelector({ variants, selectedVariantId, onSelect }: { 
+  variants: Variant[]; 
+  selectedVariantId: string; 
+  onSelect: (id: string) => void 
+}) {
+  const selectedVariant = variants.find(v => v.id === selectedVariantId);
+  const [selectedSize, setSelectedSize] = useState(selectedVariant?.size || '');
+  const [selectedColor, setSelectedColor] = useState(selectedVariant?.color || '');
+
+  const colorMap: Record<string, string> = {
+    'red': '#EF4444', 'blue': '#3B82F6', 'green': '#10B981', 'yellow': '#F59E0B',
+    'black': '#000000', 'white': '#FFFFFF', 'pink': '#EC4899', 'purple': '#8B5CF6',
+    'orange': '#F97316', 'gray': '#6B7280', 'navy': '#1E3A8A', 'maroon': '#800000',
+    'peach': '#FFDAB9', 'lavender': '#E6E6FA'
+  };
+
+  const getColorHex = (colorName: string) => {
+    const normalized = colorName.toLowerCase().trim();
+    if (colorMap[normalized]) return colorMap[normalized];
+    const words = normalized.split(/\s+/);
+    for (const word of words) if (colorMap[word]) return colorMap[word];
+    return '#cccccc';
+  };
+
+  const uniqueColors = Array.from(new Set(variants.map(v => v.color.toLowerCase().trim())))
+    .map(c => variants.find(v => v.color.toLowerCase().trim() === c)!);
+  
+  const uniqueSizes = Array.from(new Set(variants.map(v => v.size)));
+
+  // Update selection when size or color changes
+  useEffect(() => {
+    const matching = variants.find(v => 
+      v.size === selectedSize && v.color.toLowerCase().trim() === selectedColor.toLowerCase().trim()
+    );
+    if (matching && matching.id !== selectedVariantId) {
+      onSelect(matching.id);
+    }
+  }, [selectedSize, selectedColor, variants]);
+
+  return (
+    <div className="space-y-4">
+      {/* Colors */}
+      <div className="space-y-2">
+        <label className="text-[10px] font-black uppercase text-muted tracking-widest">Color: {selectedColor}</label>
+        <div className="flex flex-wrap gap-2">
+          {uniqueColors.map(v => {
+            const isSelected = selectedColor.toLowerCase().trim() === v.color.toLowerCase().trim();
+            const hasStock = variants.some(pv => pv.color.toLowerCase().trim() === v.color.toLowerCase().trim() && pv.stock > 0);
+            return (
+              <button
+                key={v.color}
+                onClick={() => setSelectedColor(v.color)}
+                className={cn(
+                  "w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all",
+                  isSelected ? "border-primary ring-2 ring-primary/20" : "border-border",
+                  !hasStock && "opacity-30 grayscale"
+                )}
+              >
+                <div 
+                  className="w-5 h-5 rounded-full border border-black/5" 
+                  style={{ backgroundColor: v.colorHex || getColorHex(v.color) }} 
+                />
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Sizes */}
+      <div className="space-y-2">
+        <label className="text-[10px] font-black uppercase text-muted tracking-widest">Size: {selectedSize}</label>
+        <div className="flex flex-wrap gap-2">
+          {uniqueSizes.map(size => {
+            const isSelected = selectedSize === size;
+            const hasStockInColor = variants.some(v => v.size === size && v.color.toLowerCase().trim() === selectedColor.toLowerCase().trim() && v.stock > 0);
+            const hasStockAtAll = variants.some(v => v.size === size && v.stock > 0);
+
+            return (
+              <button
+                key={size}
+                onClick={() => setSelectedSize(size)}
+                disabled={!hasStockAtAll}
+                className={cn(
+                  "px-3 py-1.5 rounded-lg border text-xs font-bold transition-all",
+                  isSelected 
+                    ? "bg-primary text-white border-primary shadow-sm" 
+                    : hasStockInColor
+                      ? "border-border text-foreground hover:border-primary/50"
+                      : hasStockAtAll
+                        ? "border-border text-muted border-dashed"
+                        : "border-border text-muted/40 line-through cursor-not-allowed"
+                )}
+              >
+                {size}
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>
