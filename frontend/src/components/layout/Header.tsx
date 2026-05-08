@@ -56,11 +56,25 @@ export default function Header() {
     const newHistory = [query, ...history.filter((s: string) => s !== query)].slice(0, 5);
     localStorage.setItem('recentSearches', JSON.stringify(newHistory));
 
-    // Check for direct category match
-    const directMatch = categories.find(c =>
-      c.name.toLowerCase() === query.toLowerCase() ||
+    // Check for direct category match (includes subcategories)
+    let directMatch = categories.find(c => 
+      c.name.toLowerCase() === query.toLowerCase() || 
       c.slug.toLowerCase() === query.toLowerCase()
     );
+
+    // If no parent match, check children
+    if (!directMatch) {
+      for (const parent of categories) {
+        const childMatch = parent.children?.find(c => 
+          c.name.toLowerCase() === query.toLowerCase() || 
+          c.slug.toLowerCase() === query.toLowerCase()
+        );
+        if (childMatch) {
+          directMatch = childMatch;
+          break;
+        }
+      }
+    }
 
     if (directMatch) {
       window.location.href = `/category/${directMatch.slug}`;

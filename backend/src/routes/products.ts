@@ -53,14 +53,18 @@ router.get('/', async (req: Request, res: Response) => {
         // Use AND for multiple terms: every term must match something
         where.AND = [
           ...(where.AND as any[] || []),
-          ...searchTerms.map(term => ({
-            OR: [
-              { name: { contains: term, mode: 'insensitive' } },
-              { description: { contains: term, mode: 'insensitive' } },
-              { tags: { hasSome: [term.toLowerCase()] } },
-              { category: { name: { contains: term, mode: 'insensitive' } } }, // Search in category name too
-            ]
-          }))
+          ...searchTerms.map(term => {
+            const singular = term.toLowerCase().endsWith('s') ? term.slice(0, -1) : term;
+            return {
+              OR: [
+                { name: { contains: term, mode: 'insensitive' } },
+                { name: { contains: singular, mode: 'insensitive' } },
+                { description: { contains: term, mode: 'insensitive' } },
+                { tags: { hasSome: [term.toLowerCase(), singular.toLowerCase()] } },
+                { category: { name: { contains: term, mode: 'insensitive' } } },
+              ]
+            };
+          })
         ];
       }
     }
