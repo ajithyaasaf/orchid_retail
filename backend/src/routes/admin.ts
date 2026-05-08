@@ -15,28 +15,8 @@ const router = Router();
 router.use(authMiddleware);
 router.use(adminMiddleware);
 
-// ─── Dashboard ───────────────────────────────────────────────────────────────
-router.get('/dashboard', async (_req: Request, res: Response) => {
-  try {
-    const [totalRevenue, totalOrders, totalProducts, totalCustomers, recentOrders, lowStockVariants] = await Promise.all([
-      prisma.order.aggregate({ where: { paymentStatus: 'paid' }, _sum: { total: true } }),
-      prisma.order.count(),
-      prisma.product.count({ where: { isActive: true } }),
-      prisma.user.count({ where: { role: 'customer' } }),
-      prisma.order.findMany({ orderBy: { createdAt: 'desc' }, take: 10, include: { items: true, user: { select: { name: true, email: true } } } }),
-      prisma.variant.findMany({ where: { stock: { lte: 5 }, isActive: true }, include: { product: { select: { name: true } } }, orderBy: { stock: 'asc' }, take: 20 }),
-    ]);
-    const topProducts = await prisma.orderItem.groupBy({ by: ['productId', 'productName'], _sum: { quantity: true, lineTotal: true }, orderBy: { _sum: { lineTotal: 'desc' } }, take: 10 });
-    res.json({
-      success: true,
-      data: {
-        totalRevenue: totalRevenue._sum.total || 0, totalOrders, totalProducts, totalCustomers, recentOrders,
-        topProducts: topProducts.map(tp => ({ productId: tp.productId, productName: tp.productName, totalSold: tp._sum.quantity || 0, revenue: tp._sum.lineTotal || 0 })),
-        lowStockAlerts: lowStockVariants.map(v => ({ variantId: v.id, productName: v.product.name, sku: v.sku, size: v.size, color: v.color, stock: v.stock })),
-      },
-    });
-  } catch (error) { console.error('Error fetching dashboard:', error); res.status(500).json({ success: false, error: 'Failed to fetch dashboard' }); }
-});
+// Diagnostic test route
+router.get('/test', (_req, res) => res.json({ success: true, message: 'Admin API is live' }));
 
 router.get('/cloudinary-signature', async (_req: Request, res: Response) => {
   try {
@@ -58,6 +38,31 @@ router.get('/cloudinary-signature', async (_req: Request, res: Response) => {
     console.error('Cloudinary signature error:', error);
     res.status(500).json({ success: false, error: 'Failed to generate signature' });
   }
+});
+
+
+
+// ─── Dashboard ───────────────────────────────────────────────────────────────
+router.get('/dashboard', async (_req: Request, res: Response) => {
+  try {
+    const [totalRevenue, totalOrders, totalProducts, totalCustomers, recentOrders, lowStockVariants] = await Promise.all([
+      prisma.order.aggregate({ where: { paymentStatus: 'paid' }, _sum: { total: true } }),
+      prisma.order.count(),
+      prisma.product.count({ where: { isActive: true } }),
+      prisma.user.count({ where: { role: 'customer' } }),
+      prisma.order.findMany({ orderBy: { createdAt: 'desc' }, take: 10, include: { items: true, user: { select: { name: true, email: true } } } }),
+      prisma.variant.findMany({ where: { stock: { lte: 5 }, isActive: true }, include: { product: { select: { name: true } } }, orderBy: { stock: 'asc' }, take: 20 }),
+    ]);
+    const topProducts = await prisma.orderItem.groupBy({ by: ['productId', 'productName'], _sum: { quantity: true, lineTotal: true }, orderBy: { _sum: { lineTotal: 'desc' } }, take: 10 });
+    res.json({
+      success: true,
+      data: {
+        totalRevenue: totalRevenue._sum.total || 0, totalOrders, totalProducts, totalCustomers, recentOrders,
+        topProducts: topProducts.map(tp => ({ productId: tp.productId, productName: tp.productName, totalSold: tp._sum.quantity || 0, revenue: tp._sum.lineTotal || 0 })),
+        lowStockAlerts: lowStockVariants.map(v => ({ variantId: v.id, productName: v.product.name, sku: v.sku, size: v.size, color: v.color, stock: v.stock })),
+      },
+    });
+  } catch (error) { console.error('Error fetching dashboard:', error); res.status(500).json({ success: false, error: 'Failed to fetch dashboard' }); }
 });
 
 // ─── Products CRUD ───────────────────────────────────────────────────────────

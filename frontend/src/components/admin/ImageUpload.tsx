@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react';
 import { Upload, X, Loader2, Image as ImageIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { adminApi } from '@/lib/api';
 
 interface ImageUploadProps {
   images: string[];
@@ -21,14 +22,13 @@ export default function ImageUpload({ images, onChange, maxImages = 5 }: ImageUp
     const newImages = [...images];
 
     try {
-      // 1. Get Signature from backend
-      const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-      const response = await fetch(`${apiBase}/admin/cloudinary-signature`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      const { data } = await response.json();
+      // 1. Get Signature from backend using the centralized API
+      const resJson = await adminApi.getCloudinarySignature();
+      const data = resJson.data;
+
+      if (!data || !data.apiKey) {
+        throw new Error('Invalid signature data received from server');
+      }
 
       // 2. Upload each file directly to Cloudinary
       for (let i = 0; i < files.length; i++) {
@@ -46,6 +46,12 @@ export default function ImageUpload({ images, onChange, maxImages = 5 }: ImageUp
           `https://api.cloudinary.com/v1_1/${data.cloudName}/image/upload`,
           { method: 'POST', body: formData }
         );
+
+        if (!uploadRes.ok) {
+          console.error('Cloudinary upload error:', await uploadRes.json());
+          continue;
+        }
+
         const uploadData = await uploadRes.json();
         
         if (uploadData.secure_url) {
@@ -53,10 +59,10 @@ export default function ImageUpload({ images, onChange, maxImages = 5 }: ImageUp
         }
       }
 
-      onChange(newImages);
-    } catch (error) {
+      onChange(newImages.filter(Boolean)); // Ensure no empty strings
+    } catch (error: any) {
       console.error('Upload failed:', error);
-      alert('Failed to upload images. Please try again.');
+      alert(error.message || 'Failed to upload images. Please try again.');
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import ProductCard from '@/components/product/ProductCard';
 import { productApi, categoryApi } from '@/lib/api';
 import { cn } from '@/lib/utils';

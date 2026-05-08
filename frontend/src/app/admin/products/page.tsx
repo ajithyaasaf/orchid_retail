@@ -29,7 +29,7 @@ export default function AdminProductsPage() {
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 });
 
   // Form state
-  const [form, setForm] = useState({ name: '', slug: '', description: '', categoryId: '', images: [''], tags: '', exportBadge: false, isFeatured: false });
+  const [form, setForm] = useState({ name: '', slug: '', description: '', categoryId: '', images: [], tags: '', exportBadge: false, isFeatured: false });
   const [variants, setVariants] = useState<VariantData[]>([{ ...EMPTY_VARIANT }]);
   const [formError, setFormError] = useState('');
 
@@ -63,7 +63,7 @@ export default function AdminProductsPage() {
 
   const openCreateModal = () => {
     setEditingProduct(null);
-    setForm({ name: '', slug: '', description: '', categoryId: '', images: [''], tags: '', exportBadge: false, isFeatured: false });
+    setForm({ name: '', slug: '', description: '', categoryId: '', images: [], tags: '', exportBadge: false, isFeatured: false });
     setVariants([{ ...EMPTY_VARIANT }]);
     setFormError(''); setShowModal(true);
   };

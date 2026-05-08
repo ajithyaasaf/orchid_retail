@@ -42,11 +42,15 @@ async function fetchApi<T>(endpoint: string, options: FetchOptions = {}): Promis
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Request failed' }));
-    const errorMessage = error.error || `HTTP ${response.status}`;
-    
-    // If we get an unauthorized error, we just throw it. 
-    // The calling code (like authStore) should handle the logout/cleanup.
+    let errorMessage = `HTTP ${response.status}`;
+    try {
+      const errorJson = await response.json();
+      errorMessage = errorJson.error || errorMessage;
+    } catch (e) {
+      // If not JSON, maybe get text
+      const text = await response.text().catch(() => '');
+      if (text) errorMessage += `: ${text.substring(0, 100)}`;
+    }
     throw new Error(errorMessage);
   }
   return response.json();
@@ -177,6 +181,9 @@ export const adminApi = {
   createCombo: (data: Record<string, unknown>) => fetchApi('/admin/combos', { method: 'POST', body: JSON.stringify(data) }),
   updateCombo: (id: string, data: Record<string, unknown>) => fetchApi(`/admin/combos/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteCombo: (id: string) => fetchApi(`/admin/combos/${id}`, { method: 'DELETE' }),
+
+  // Utils
+  getCloudinarySignature: () => fetchApi<{ success: boolean; data: any }>('/admin/cloudinary-signature'),
 };
 
 export const authApi = {
