@@ -22,7 +22,8 @@ export default function ImageUpload({ images, onChange, maxImages = 5 }: ImageUp
 
     try {
       // 1. Get Signature from backend
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/cloudinary-signature`, {
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${apiBase}/admin/cloudinary-signature`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
