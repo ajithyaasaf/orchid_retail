@@ -35,7 +35,7 @@ router.post('/create', async (req: Request, res: Response) => {
 
         const variant = await tx.variant.findUnique({
           where: { id: item.variantId },
-          include: { product: { select: { name: true, images: true, isActive: true } } },
+          include: { product: { select: { name: true, images: true, isActive: true, freeShipping: true } } },
         });
 
         if (!variant || !variant.isActive || !variant.product.isActive) {
@@ -64,6 +64,7 @@ router.post('/create', async (req: Request, res: Response) => {
           mrp: variant.mrp,
           quantity: item.quantity,
           lineTotal,
+          freeShipping: variant.product.freeShipping || false,
         });
 
         // Reserve stock immediately
@@ -73,10 +74,10 @@ router.post('/create', async (req: Request, res: Response) => {
         });
       }
 
-      // ── Step 2: Compute delivery charge server-side ───────────────────────
-      // Allowed values: 0 (free for orders ≥999), 79 (standard), 149 (express)
+      // Allowed values: 0 (free for orders ≥999 OR if any item has freeShipping), 79 (standard), 149 (express)
       // The server recomputes based on subtotal + deliveryOption — never trusts raw client value.
-      const STANDARD_CHARGE = subtotal >= 999 ? 0 : 79;
+      const hasFreeShippingItem = orderItems.some(oi => oi.freeShipping);
+      const STANDARD_CHARGE = (subtotal >= 999 || hasFreeShippingItem) ? 0 : 79;
       const EXPRESS_CHARGE = 149;
       const deliveryCharge = deliveryOption === 'express' ? EXPRESS_CHARGE : STANDARD_CHARGE;
 

@@ -41,6 +41,7 @@ model Product {
   exportBadge  Boolean             @default(false)
   isFeatured   Boolean             @default(false)
   isActive     Boolean             @default(true)
+  freeShipping Boolean             @default(false)
   variants     Variant[]
   reviews      Review[]
   orderItems   OrderItem[]
@@ -188,6 +189,7 @@ model OrderItem {
   mrp          Float
   quantity     Int
   lineTotal    Float
+  freeShipping Boolean  @default(false)
 
   @@index([orderId])
   @@index([comboId])
