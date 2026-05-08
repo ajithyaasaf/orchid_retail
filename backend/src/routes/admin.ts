@@ -210,8 +210,10 @@ router.get('/customers', async (req: Request, res: Response) => {
 
     const [customers, total] = await Promise.all([
       prisma.user.findMany({
-        where: where as any, select: { id: true, name: true, email: true, phone: true, createdAt: true, _count: { select: { orders: true } },
-          orders: { select: { total: true, paymentStatus: true }, where: { paymentStatus: 'paid' } } },
+        where: where as any, select: {
+          id: true, name: true, email: true, phone: true, createdAt: true, _count: { select: { orders: true } },
+          orders: { select: { total: true, paymentStatus: true }, where: { paymentStatus: 'paid' } }
+        },
         orderBy: { createdAt: 'desc' }, skip: (pageNum - 1) * limitNum, take: limitNum,
       }),
       prisma.user.count({ where: where as any }),
@@ -411,14 +413,14 @@ router.post('/combos', async (req: Request, res: Response) => {
 router.put('/combos/:id', async (req: Request, res: Response) => {
   try {
     const { name, slug, description, images, price, mrp, isFeatured, isActive, productIds } = req.body;
-    
+
     // Update basic info
     const combo = await prisma.combo.update({
       where: { id: req.params.id },
       data: {
-        ...(name && { name }), ...(slug && { slug }), ...(description !== undefined && { description }), 
-        ...(images && { images }), ...(price !== undefined && { price: Number(price) }), 
-        ...(mrp !== undefined && { mrp: Number(mrp) }), ...(isFeatured !== undefined && { isFeatured }), 
+        ...(name && { name }), ...(slug && { slug }), ...(description !== undefined && { description }),
+        ...(images && { images }), ...(price !== undefined && { price: Number(price) }),
+        ...(mrp !== undefined && { mrp: Number(mrp) }), ...(isFeatured !== undefined && { isFeatured }),
         ...(isActive !== undefined && { isActive })
       }
     });

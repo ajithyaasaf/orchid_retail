@@ -64,6 +64,30 @@ export default function ProductClient({ product }: ProductClientProps) {
   const [selectedColor, setSelectedColor] = useState<string>(
     product?.variants?.find(v => v.stock > 0)?.color || product?.variants?.[0]?.color || ''
   );
+  
+  // Color mapping for swatches
+  const colorMap: Record<string, string> = {
+    'red': '#EF4444',
+    'blue': '#3B82F6',
+    'green': '#10B981',
+    'yellow': '#F59E0B',
+    'black': '#000000',
+    'white': '#FFFFFF',
+    'pink': '#EC4899',
+    'purple': '#8B5CF6',
+    'orange': '#F97316',
+    'gray': '#6B7280',
+    'grey': '#6B7280',
+    'navy': '#1E3A8A',
+    'maroon': '#800000',
+    'peach': '#FFDAB9',
+    'lavender': '#E6E6FA',
+  };
+
+  const getColorHex = (colorName: string) => {
+    const normalized = colorName.toLowerCase().trim();
+    return colorMap[normalized] || '#cccccc';
+  };
   const [quantity, setQuantity] = useState(1);
   const [openAccordion, setOpenAccordion] = useState('description');
   const [pincode, setPincode] = useState('');
@@ -74,10 +98,13 @@ export default function ProductClient({ product }: ProductClientProps) {
   const wishlisted = isWishlisted(product.id);
 
   // Derived state
-  const uniqueColors = [...new Map(product.variants.map(v => [v.color, v])).values()];
+  const uniqueColors = [...new Map(product.variants.map(v => [v.color.toLowerCase().trim(), v])).values()];
   const uniqueSizes = [...new Set(product.variants.map(v => v.size))];
 
-  const selectedVariant = product.variants.find(v => v.size === selectedSize && v.color === selectedColor);
+  const selectedVariant = product.variants.find(v => 
+    v.size === selectedSize && 
+    v.color.toLowerCase().trim() === selectedColor.toLowerCase().trim()
+  );
   const displayPrice = selectedVariant?.price || product.minPrice;
   const displayMrp = selectedVariant?.mrp || product.minMrp;
   const discount = calculateDiscount(displayMrp, displayPrice);
@@ -85,8 +112,16 @@ export default function ProductClient({ product }: ProductClientProps) {
   const isOutOfStock = !selectedVariant || availableStock <= 0;
 
   const isVariantAvailable = (size: string, color: string) => {
-    const v = product.variants.find(v => v.size === size && v.color === color);
+    const v = product.variants.find(v => 
+      v.size === size && 
+      v.color.toLowerCase().trim() === color.toLowerCase().trim()
+    );
     return v ? v.stock - v.reservedStock > 0 : false;
+  };
+
+  // Check if a size is available in ANY color
+  const isSizeAvailableAtAll = (size: string) => {
+    return product.variants.some(v => v.size === size && (v.stock - v.reservedStock) > 0);
   };
 
   const handleAddToCart = () => {
@@ -215,24 +250,40 @@ export default function ProductClient({ product }: ProductClientProps) {
                 </h3>
                 <div className="flex gap-2">
                   {uniqueColors.map(v => {
-                    const available = product.variants.some(
-                      pv => pv.color === v.color && pv.size === selectedSize && (pv.stock - pv.reservedStock) > 0
+                    const availableInSelectedSize = product.variants.some(
+                      pv => pv.color.toLowerCase().trim() === v.color.toLowerCase().trim() && 
+                      pv.size === selectedSize && 
+                      (pv.stock - pv.reservedStock) > 0
                     );
+
+                    const handleColorClick = () => {
+                      setSelectedColor(v.color);
+                      // Auto-switch size if current size isn't available in new color
+                      if (!availableInSelectedSize) {
+                        const firstAvailableSize = product.variants.find(
+                          pv => pv.color.toLowerCase().trim() === v.color.toLowerCase().trim() && 
+                          (pv.stock - pv.reservedStock) > 0
+                        )?.size;
+                        if (firstAvailableSize) setSelectedSize(firstAvailableSize);
+                      }
+                    };
+
                     return (
                       <button
                         key={v.color}
-                        onClick={() => setSelectedColor(v.color)}
-                        disabled={!available}
+                        onClick={handleColorClick}
                         className={cn(
                           'w-9 h-9 rounded-full border-2 flex items-center justify-center transition-all',
-                          selectedColor === v.color ? 'border-primary ring-2 ring-primary/20' : 'border-border',
-                          !available && 'opacity-30 cursor-not-allowed'
+                          selectedColor.toLowerCase().trim() === v.color.toLowerCase().trim() 
+                            ? 'border-primary ring-2 ring-primary/20' 
+                            : 'border-border',
+                          !availableInSelectedSize && 'opacity-30'
                         )}
                         title={v.color}
                       >
                         <div
-                          className="w-6 h-6 rounded-full"
-                          style={{ backgroundColor: v.colorHex || '#ccc' }}
+                          className="w-6 h-6 rounded-full border border-black/5"
+                          style={{ backgroundColor: (v.colorHex && v.colorHex !== '#000000') ? v.colorHex : getColorHex(v.color) }}
                         />
                       </button>
                     );
@@ -248,19 +299,34 @@ export default function ProductClient({ product }: ProductClientProps) {
               </h3>
               <div className="flex flex-wrap gap-2">
                 {uniqueSizes.map(size => {
-                  const available = isVariantAvailable(size, selectedColor);
+                  const availableInSelectedColor = isVariantAvailable(size, selectedColor);
+                  const availableAtAll = isSizeAvailableAtAll(size);
+                  
+                  const handleSizeClick = () => {
+                    setSelectedSize(size);
+                    // Auto-switch color if current color isn't available in new size
+                    if (!availableInSelectedColor) {
+                      const firstAvailableColor = product.variants.find(
+                        pv => pv.size === size && (pv.stock - pv.reservedStock) > 0
+                      )?.color;
+                      if (firstAvailableColor) setSelectedColor(firstAvailableColor);
+                    }
+                  };
+
                   return (
                     <button
                       key={size}
-                      onClick={() => available && setSelectedSize(size)}
-                      disabled={!available}
+                      onClick={handleSizeClick}
+                      disabled={!availableAtAll}
                       className={cn(
                         'min-w-[48px] px-3 py-2.5 rounded-lg border text-sm font-medium transition-all',
                         selectedSize === size
                           ? 'bg-primary text-white border-primary'
-                          : available
+                          : availableInSelectedColor
                             ? 'border-border text-foreground hover:border-primary hover:text-primary'
-                            : 'border-border text-muted line-through opacity-40 cursor-not-allowed'
+                            : availableAtAll
+                              ? 'border-border text-foreground/60 border-dashed hover:border-primary hover:text-primary'
+                              : 'border-border text-muted line-through opacity-40 cursor-not-allowed'
                       )}
                     >
                       {size}

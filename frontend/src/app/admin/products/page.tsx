@@ -15,7 +15,7 @@ interface ProductData {
 }
 interface CategoryOption { id: string; name: string; slug: string; children?: CategoryOption[] }
 
-const EMPTY_VARIANT: VariantData = { sku: '', size: '', color: '', colorHex: '#000000', price: 0, mrp: 0, stock: 0 };
+const EMPTY_VARIANT: VariantData = { sku: '', size: '', color: '', colorHex: '', price: 0, mrp: 0, stock: 0 };
 
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<ProductData[]>([]);
