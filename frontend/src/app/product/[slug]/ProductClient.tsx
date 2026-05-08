@@ -137,6 +137,40 @@ export default function ProductClient({ product }: ProductClientProps) {
   const uniqueColors = [...new Map(product.variants.map(v => [v.color.toLowerCase().trim(), v])).values()];
   const uniqueSizes = [...new Set(product.variants.map(v => v.size))];
 
+  // Reset image index when color changes
+  useEffect(() => {
+    setSelectedImage(0);
+  }, [selectedColor]);
+
+  // Filtered images based on color
+  const filteredImages = (() => {
+    const indices = new Set<number>();
+    
+    // 1. Find all variants of the selected color and include their imageIndices
+    product.variants.forEach(v => {
+      if (v.color.toLowerCase().trim() === selectedColor.toLowerCase().trim()) {
+        if (v.imageIndex !== undefined) indices.add(v.imageIndex);
+      }
+    });
+
+    // 2. Also fuzzy match images by filename (best practice fallback)
+    product.images.forEach((img, idx) => {
+      if (img.toLowerCase().includes(selectedColor.toLowerCase().trim())) {
+        indices.add(idx);
+      }
+    });
+
+    // 3. If NO specific images were found for this color, fall back to the primary hero image
+    if (indices.size === 0) {
+      indices.add(0);
+    }
+
+    // Sort to keep original order but filter the actual list
+    return Array.from(indices).sort((a, b) => a - b).map(idx => product.images[idx]).filter(Boolean);
+  })();
+
+  const currentMainImage = filteredImages[selectedImage] || filteredImages[0] || product.images[0];
+
   const selectedVariant = product.variants.find(v => 
     v.size === selectedSize && 
     v.color.toLowerCase().trim() === selectedColor.toLowerCase().trim()
@@ -208,30 +242,35 @@ export default function ProductClient({ product }: ProductClientProps) {
       <div className="container py-6 md:py-10">
         <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
           {/* Image Gallery */}
-          <div className="space-y-3">
-            <div className="aspect-[3/4] bg-surface rounded-xl overflow-hidden">
+          <div className="space-y-4">
+            <div className="relative aspect-[4/5] bg-muted rounded-2xl overflow-hidden group">
               <img
-                src={product.images[selectedImage] || 'https://placehold.co/600x800/f5f5f5/E8007A?text=Orchid'}
+                src={currentMainImage}
                 alt={product.name}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
               />
+              {discount > 0 && (
+                <div className="absolute top-4 left-4 bg-primary text-white px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
+                  {discount}% OFF
+                </div>
+              )}
             </div>
-            {product.images.length > 1 && (
-              <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-                {product.images.map((img, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setSelectedImage(i)}
-                    className={cn(
-                      'shrink-0 w-16 h-20 rounded-lg overflow-hidden border-2 transition-colors',
-                      i === selectedImage ? 'border-primary' : 'border-transparent hover:border-border'
-                    )}
-                  >
-                    <img src={img} alt="" className="w-full h-full object-cover" />
-                  </button>
-                ))}
-              </div>
-            )}
+
+            {/* Thumbnails */}
+            <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
+              {filteredImages.map((img, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setSelectedImage(idx)}
+                  className={cn(
+                    'relative w-20 aspect-[4/5] rounded-lg overflow-hidden border-2 transition-all flex-shrink-0',
+                    selectedImage === idx ? 'border-primary' : 'border-transparent'
+                  )}
+                >
+                  <img src={img} alt={`${product.name} ${idx + 1}`} className="w-full h-full object-cover" />
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Product Info */}
