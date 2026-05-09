@@ -9,9 +9,9 @@ async function main() {
   // 1. Ensure a Super Admin exists
   await prisma.user.upsert({
     where: { email: 'orchidkidswearhub@gmail.com' },
-    update: { 
+    update: {
       role: 'super_admin',
-      password: password 
+      password: password
     },
     create: {
       email: 'orchidkidswearhub@gmail.com',
@@ -25,9 +25,9 @@ async function main() {
   // 2. Ensure a Standard Admin exists
   await prisma.user.upsert({
     where: { email: 'admin@orchidkidswearhub.com' },
-    update: { 
+    update: {
       role: 'admin',
-      password: password 
+      password: password
     },
     create: {
       email: 'admin@orchidkidswearhub.com',
