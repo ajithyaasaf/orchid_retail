@@ -8,17 +8,17 @@ async function main() {
 
   // 1. Ensure a Super Admin exists
   await prisma.user.upsert({
-    where: { email: 'superadmin@orchidhub.in' },
+    where: { email: 'orchidkidswearhub@gmail.com' },
     update: { 
       role: 'super_admin',
       password: password 
     },
     create: {
-      email: 'superadmin@orchidhub.in',
+      email: 'orchidkidswearhub@gmail.com',
       name: 'Super Admin',
       password,
       role: 'super_admin',
-      phone: '+910000000000'
+      phone: '+917200879956'
     },
   });
 
@@ -34,12 +34,12 @@ async function main() {
       name: 'Staff Admin',
       password,
       role: 'admin',
-      phone: '+911111111111'
+      phone: '+917200879956'
     },
   });
 
   console.log('✅ Accounts set up:');
-  console.log('1. Super Admin: superadmin@orchidhub.in / admin123');
+  console.log('1. Super Admin: orchidkidswearhub@gmail.com / admin123');
   console.log('2. Standard Admin: admin@orchidhub.in / admin123');
 }
 

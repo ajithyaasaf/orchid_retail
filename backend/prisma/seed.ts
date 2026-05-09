@@ -200,9 +200,9 @@ async function main() {
   // Admin users
   const adminPassword = await bcrypt.hash('admin123', 10);
   await prisma.user.upsert({
-    where: { email: 'superadmin@orchidhub.in' },
-    update: { role: 'super_admin', password: adminPassword },
-    create: { name: 'Super Admin', email: 'superadmin@orchidhub.in', role: 'super_admin', password: adminPassword },
+    where: { email: 'orchidkidswearhub@gmail.com' },
+    update: {},
+    create: { name: 'Super Admin', email: 'orchidkidswearhub@gmail.com', role: 'super_admin', password: adminPassword },
   });
 
   console.log(`\n✅ Seed complete! Created:`);

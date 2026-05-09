@@ -6,7 +6,7 @@ export default function WhatsAppButton() {
   const message = encodeURIComponent(
     'Hi! I have a query about products at Orchid Export Store.'
   );
-  const phone = '919876543210';
+  const phone = '917200879956';
 
   return (
     <a

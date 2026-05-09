@@ -53,18 +53,22 @@ export default function Footer() {
 
             {/* Contact */}
             <div className="space-y-2.5">
-              <a href="mailto:hello@orchidhub.in" className="flex items-center gap-2 text-sm text-gray-400 hover:text-primary transition-colors">
+              <a href="mailto:orchidkidswearhub@gmail.com" className="flex items-center gap-2 text-sm text-gray-400 hover:text-primary transition-colors">
                 <Mail size={16} />
-                hello@orchidhub.in
+                orchidkidswearhub@gmail.com
               </a>
-              <a href="tel:+919876543210" className="flex items-center gap-2 text-sm text-gray-400 hover:text-primary transition-colors">
+              <a href="tel:+917200879956" className="flex items-center gap-2 text-sm text-gray-400 hover:text-primary transition-colors">
                 <Phone size={14} />
-                +91 98765 43210
+                +91 72008 79956
               </a>
-              <p className="flex items-center gap-2 text-sm text-gray-400">
-                <MapPin size={14} />
-                Tiruppur, Tamil Nadu, India
-              </p>
+              <div className="flex items-start gap-2 text-sm text-gray-400">
+                <MapPin size={14} className="mt-1 shrink-0" />
+                <p className="leading-relaxed">
+                  no.3(1)2A, Sivarajan compound,<br />
+                  appachi Nagar extension, 2nd Street,<br />
+                  Kongu main road, Tirupur - 641607
+                </p>
+              </div>
             </div>
           </div>
 

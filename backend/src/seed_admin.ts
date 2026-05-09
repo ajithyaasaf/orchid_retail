@@ -4,7 +4,7 @@ import bcrypt from 'bcrypt';
 const prisma = new PrismaClient();
 
 async function main() {
-  const email = 'admin@orchidhub.in';
+  const email = 'orchidkidswearhub@gmail.com';
   const password = 'admin'; // Known password for testing
   const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -19,7 +19,7 @@ async function main() {
       name: 'Admin User',
       password: hashedPassword,
       role: 'admin',
-      phone: '+919999999999',
+      phone: '+917200879956',
     },
   });
 
