@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Minus, Plus, Trash2, ShoppingBag, ArrowLeft, Tag } from 'lucide-react';
 import { useCartStore } from '@/stores/cartStore';
 import { formatPrice } from '@/lib/utils';
+import { calculateShippingCharge, SHIPPING } from '@orchid/shared';
 import { useState, useEffect } from 'react';
 
 export default function CartPage() {
@@ -11,6 +12,7 @@ export default function CartPage() {
   const updateQuantity = useCartStore(s => s.updateQuantity);
   const removeItem = useCartStore(s => s.removeItem);
   const subtotal = useCartStore(s => s.subtotal);
+  const hasFreeShippingItem = useCartStore(s => s.hasFreeShippingItem);
   const [mounted, setMounted] = useState(false);
   const [couponCode, setCouponCode] = useState('');
   const [couponApplied, setCouponApplied] = useState(false);
@@ -18,7 +20,7 @@ export default function CartPage() {
   useEffect(() => { setMounted(true); }, []);
   if (!mounted) return null;
 
-  const deliveryCharge = subtotal() >= 999 ? 0 : 79;
+  const deliveryCharge = calculateShippingCharge(subtotal(), 'standard', hasFreeShippingItem());
   const discount = couponApplied ? Math.min(subtotal() * 0.1, 200) : 0;
   const total = subtotal() - discount + deliveryCharge;
 
@@ -139,9 +141,9 @@ export default function CartPage() {
             </Link>
 
             <div className="h-[18px]">
-              {subtotal() < 999 ? (
+              {(subtotal() < SHIPPING.FREE_THRESHOLD && !hasFreeShippingItem()) ? (
                 <p className="text-xs text-center text-muted">
-                  Add {formatPrice(999 - subtotal())} more for <span className="text-primary font-medium">FREE delivery</span>
+                  Add {formatPrice(SHIPPING.FREE_THRESHOLD - subtotal())} more for <span className="text-primary font-medium">FREE delivery</span>
                 </p>
               ) : (
                 <p className="text-xs text-center text-success font-medium">

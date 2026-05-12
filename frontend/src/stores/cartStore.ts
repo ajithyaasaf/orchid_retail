@@ -13,6 +13,7 @@ export interface CartItemData {
   variantColor: string;
   price: number;
   mrp: number;
+  freeShipping?: boolean;
   
   // For Combos/Bundles
   comboId?: string;
@@ -43,6 +44,7 @@ interface CartStore {
   // Computed
   totalItems: () => number;
   subtotal: () => number;
+  hasFreeShippingItem: () => boolean;
 }
 
 export const useCartStore = create<CartStore>()(
@@ -90,6 +92,7 @@ export const useCartStore = create<CartStore>()(
 
       totalItems: () => get().items.reduce((sum, i) => sum + i.quantity, 0),
       subtotal: () => get().items.reduce((sum, i) => sum + i.price * i.quantity, 0),
+      hasFreeShippingItem: () => get().items.some(i => i.freeShipping),
     }),
     { name: 'orchid-cart' }
   )

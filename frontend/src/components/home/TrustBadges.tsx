@@ -1,10 +1,11 @@
 'use client';
 
 import { Shield, RotateCcw, Truck, Award, CreditCard, Headphones } from 'lucide-react';
+import { SHIPPING } from '@orchid/shared';
 
 const BADGES = [
   { icon: Award, label: 'Export Quality', desc: 'Premium factory-direct products' },
-  { icon: Truck, label: 'Free Delivery', desc: 'On orders above ₹999' },
+  { icon: Truck, label: 'Free Delivery', desc: `On orders above ₹${SHIPPING.FREE_THRESHOLD}` },
   { icon: RotateCcw, label: 'Easy Returns', desc: '7-day return policy' },
   { icon: CreditCard, label: 'COD Available', desc: 'Cash on delivery' },
   { icon: Shield, label: 'Secure Payments', desc: 'UPI, Cards & more' },

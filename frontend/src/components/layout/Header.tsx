@@ -13,6 +13,8 @@ import { cn } from '@/lib/utils';
 // Categories are managed via useCategoryStore
 
 
+import { SHIPPING } from '@orchid/shared';
+
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -88,7 +90,7 @@ export default function Header() {
       {/* Top announcement bar */}
       {!isAdmin && (
         <div className="bg-primary text-white text-center py-1.5 text-xs md:text-sm font-medium tracking-wide">
-          🌸 Premium Export Quality Products at Factory Prices — Free Shipping Above ₹999
+          🌸 Premium Export Quality Products at Factory Prices — Free Shipping Above ₹{SHIPPING.FREE_THRESHOLD}
         </div>
       )}
 

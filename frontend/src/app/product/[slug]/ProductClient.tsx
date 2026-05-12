@@ -7,6 +7,7 @@ import { Heart, ShoppingBag, Truck, RotateCcw, Shield, Star, ChevronRight, Minus
 import { useCartStore } from '@/stores/cartStore';
 import { useWishlistStore } from '@/stores/wishlistStore';
 import { formatPrice, calculateDiscount, cn } from '@/lib/utils';
+import { SHIPPING } from '@orchid/shared';
 import ProductCard from '@/components/product/ProductCard';
 
 interface VariantData {
@@ -40,6 +41,7 @@ interface ProductDataFull {
   categoryId: string;
   category?: { name: string; slug: string };
   exportBadge: boolean;
+  freeShipping: boolean;
   variants: VariantData[];
   reviews: ReviewData[];
   averageRating: number;
@@ -213,6 +215,7 @@ export default function ProductClient({ product }: ProductClientProps) {
       variantColor: selectedVariant.color,
       price: selectedVariant.price,
       mrp: selectedVariant.mrp,
+      freeShipping: product.freeShipping,
     });
   };
 
@@ -505,7 +508,7 @@ export default function ProductClient({ product }: ProductClientProps) {
               <div className="flex flex-col items-center text-center p-3 bg-surface rounded-lg">
                 <Truck size={18} className="text-primary mb-1.5" />
                 <span className="text-[10px] font-medium text-foreground">Free Delivery</span>
-                <span className="text-[10px] text-muted">Above ₹999</span>
+                <span className="text-[10px] text-muted">Above ₹{SHIPPING.FREE_THRESHOLD}</span>
               </div>
               <div className="flex flex-col items-center text-center p-3 bg-surface rounded-lg">
                 <RotateCcw size={18} className="text-primary mb-1.5" />
@@ -525,7 +528,7 @@ export default function ProductClient({ product }: ProductClientProps) {
                 { key: 'description', title: 'Description', content: product.description },
                 { key: 'sizing', title: 'Size Guide', content: 'Please refer to the size chart. Sizes are in standard international measurements. For the best fit, we recommend measuring yourself and comparing with the chart.' },
                 { key: 'returns', title: 'Return Policy', content: 'We offer 7-day hassle-free returns. Products must be unused with original tags. Refunds are processed within 5-7 business days after pickup.' },
-                { key: 'shipping', title: 'Shipping Info', content: 'Standard delivery: 3-5 business days. Express delivery: 1-2 business days. Free shipping on orders above ₹999. COD available.' },
+                { key: 'shipping', title: 'Shipping Info', content: `Standard delivery: 3-5 business days. Express delivery: 1-2 business days. Free shipping on orders above ₹${SHIPPING.FREE_THRESHOLD}. COD available.` },
               ].map(acc => (
                 <div key={acc.key} className="border-b border-border">
                   <button

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { X, Minus, Plus, ShoppingBag, Trash2 } from 'lucide-react';
 import { useCartStore, CartItemData } from '@/stores/cartStore';
 import { formatPrice } from '@/lib/utils';
+import { calculateShippingCharge, SHIPPING } from '@orchid/shared';
 import { useEffect, useState } from 'react';
 
 function CartItemRow({ item }: { item: CartItemData }) {
@@ -95,6 +96,7 @@ export default function CartDrawer() {
   const closeDrawer = useCartStore(s => s.closeDrawer);
   const items = useCartStore(s => s.items);
   const subtotal = useCartStore(s => s.subtotal);
+  const hasFreeShippingItem = useCartStore(s => s.hasFreeShippingItem);
   const totalItems = useCartStore(s => s.totalItems);
   const [mounted, setMounted] = useState(false);
 
@@ -181,13 +183,13 @@ export default function CartDrawer() {
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted">Delivery</span>
                 <span className="text-sm font-medium text-success">
-                  {subtotal() >= 999 ? 'FREE' : formatPrice(79)}
+                  {calculateShippingCharge(subtotal(), 'standard', hasFreeShippingItem()) === 0 ? 'FREE' : formatPrice(calculateShippingCharge(subtotal(), 'standard', hasFreeShippingItem()))}
                 </span>
               </div>
               <div className="flex items-center justify-between pt-2 border-t border-border">
                 <span className="text-base font-semibold">Total</span>
                 <span className="text-base font-bold text-primary">
-                  {formatPrice(subtotal() + (subtotal() >= 999 ? 0 : 79))}
+                  {formatPrice(subtotal() + calculateShippingCharge(subtotal(), 'standard', hasFreeShippingItem()))}
                 </span>
               </div>
             </div>
@@ -212,9 +214,9 @@ export default function CartDrawer() {
 
             {/* Free shipping nudge */}
             <div className="h-[18px]">
-              {subtotal() < 999 ? (
+              {(subtotal() < SHIPPING.FREE_THRESHOLD && !hasFreeShippingItem()) ? (
                 <p className="text-xs text-center text-muted">
-                  Add {formatPrice(999 - subtotal())} more for <span className="text-primary font-medium">FREE delivery</span>
+                  Add {formatPrice(SHIPPING.FREE_THRESHOLD - subtotal())} more for <span className="text-primary font-medium">FREE delivery</span>
                 </p>
               ) : (
                 <p className="text-xs text-center text-success font-medium">

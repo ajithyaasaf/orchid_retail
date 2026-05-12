@@ -5,6 +5,7 @@ import { useCartStore } from '@/stores/cartStore';
 import { orderApi, paymentApi, addressApi, couponApi, type AddressData } from '@/lib/api';
 import { useGuestId } from '@/lib/useGuestId';
 import { formatPrice, cn } from '@/lib/utils';
+import { calculateShippingCharge } from '@orchid/shared';
 import Link from 'next/link';
 import { MapPin, Truck, CreditCard, Check, ArrowLeft, ShoppingBag, Loader2, AlertCircle, Tag, Trash2, Plus } from 'lucide-react';
 
@@ -40,6 +41,7 @@ export default function CheckoutPage() {
   const guestId = useGuestId();
   const items = useCartStore(s => s.items);
   const subtotal = useCartStore(s => s.subtotal);
+  const hasFreeShippingItem = useCartStore(s => s.hasFreeShippingItem);
   const clearCart = useCartStore(s => s.clearCart);
   
   const [mounted, setMounted] = useState(false);
@@ -80,7 +82,7 @@ export default function CheckoutPage() {
 
   if (!mounted || !guestId) return null;
 
-  const deliveryCharge = deliveryOption === 'express' ? 149 : (subtotal() >= 999 ? 0 : 79);
+  const deliveryCharge = calculateShippingCharge(subtotal(), deliveryOption, hasFreeShippingItem());
   const discount = appliedCoupon?.discount || 0;
   const total = Math.max(0, subtotal() - discount + deliveryCharge);
 

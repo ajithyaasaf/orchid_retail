@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import prisma from '../lib/prisma';
+import { calculateShippingCharge } from '@orchid/shared';
 
 const router = Router();
 
@@ -74,12 +75,9 @@ router.post('/create', async (req: Request, res: Response) => {
         });
       }
 
-      // Allowed values: 0 (free for orders ≥999 OR if any item has freeShipping), 79 (standard), 149 (express)
       // The server recomputes based on subtotal + deliveryOption — never trusts raw client value.
       const hasFreeShippingItem = orderItems.some(oi => oi.freeShipping);
-      const STANDARD_CHARGE = (subtotal >= 999 || hasFreeShippingItem) ? 0 : 79;
-      const EXPRESS_CHARGE = 149;
-      const deliveryCharge = deliveryOption === 'express' ? EXPRESS_CHARGE : STANDARD_CHARGE;
+      const deliveryCharge = calculateShippingCharge(subtotal, deliveryOption, hasFreeShippingItem);
 
       // ── Step 3: Apply coupon with per-user validation ─────────────────────
       let discount = 0;

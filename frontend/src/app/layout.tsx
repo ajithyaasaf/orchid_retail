@@ -17,12 +17,14 @@ const playfair = Playfair_Display({
   display: 'swap',
 });
 
+import { SHIPPING } from '@orchid/shared';
+
 export const metadata: Metadata = {
   title: {
     default: 'Orchid Wholesale | Premium Fashion at Factory Prices',
     template: '%s | Orchid Wholesale',
   },
-  description: 'Shop premium quality fashion at unbeatable factory prices. Wholesale Orchids — Women, Men, Kids — direct from the manufacturer. Free shipping above ₹999.',
+  description: `Shop premium quality fashion at unbeatable factory prices. Wholesale Orchids — Women, Men, Kids — direct from the manufacturer. Free shipping above ₹${SHIPPING.FREE_THRESHOLD}.`,
   keywords: ['wholesale fashion', 'factory prices', 'affordable fashion', 'women clothing', 'men clothing', 'kids wear', 'orchid store'],
   openGraph: {
     type: 'website',
