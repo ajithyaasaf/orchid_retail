@@ -283,6 +283,20 @@ router.put('/orders/:id', async (req: Request, res: Response) => {
             });
           }
         }
+
+        // Release applied coupon usage so customer can reuse it
+        if (currentOrder.couponId) {
+          await tx.couponUsage.deleteMany({
+            where: {
+              couponId: currentOrder.couponId,
+              userId: currentOrder.userId,
+            },
+          });
+          await tx.coupon.update({
+            where: { id: currentOrder.couponId },
+            data: { usedCount: { decrement: 1 } },
+          });
+        }
       }
 
       return await tx.order.update({

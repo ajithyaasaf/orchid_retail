@@ -258,6 +258,20 @@ router.post('/webhook', async (req: Request, res: Response) => {
             });
           }
 
+          // Release applied coupon usage so customer can reuse it
+          if (order.couponId) {
+            await tx.couponUsage.deleteMany({
+              where: {
+                couponId: order.couponId,
+                userId: order.userId,
+              },
+            });
+            await tx.coupon.update({
+              where: { id: order.couponId },
+              data: { usedCount: { decrement: 1 } },
+            });
+          }
+
           await tx.order.update({
             where: { id: order.id },
             data: {
