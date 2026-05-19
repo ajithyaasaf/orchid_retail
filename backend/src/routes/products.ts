@@ -240,6 +240,18 @@ router.get('/:slug', async (req: Request, res: Response) => {
       take: 8,
     });
 
+    const relatedProductIds = relatedProducts.map(rp => rp.id);
+    const relatedAvgRatings = await prisma.review.groupBy({
+      by: ['productId'],
+      where: { productId: { in: relatedProductIds } },
+      _avg: { rating: true },
+    });
+
+    const relatedRatingMap = new Map<string, number>();
+    for (const r of relatedAvgRatings) {
+      relatedRatingMap.set(r.productId, r._avg.rating || 0);
+    }
+
     res.json({
       success: true,
       data: {
@@ -256,6 +268,7 @@ router.get('/:slug', async (req: Request, res: Response) => {
           minMrp: rp.variants.length ? Math.min(...rp.variants.map(v => v.mrp)) : 0,
           totalStock: rp.variants.reduce((sum, v) => sum + v.stock, 0),
           reviewCount: rp._count.reviews,
+          averageRating: relatedRatingMap.get(rp.id) || 0,
         })),
       },
     });
