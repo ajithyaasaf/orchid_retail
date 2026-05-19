@@ -116,7 +116,21 @@ router.post('/verify', async (req: Request, res: Response) => {
     }
 
     // Step 3: Atomic stock deduction + order update
-    await prisma.$transaction(async (tx) => {
+    const statusResult = await prisma.$transaction(async (tx) => {
+      // Re-fetch order inside transaction to lock it and prevent concurrent double stock-deduction
+      const freshOrder = await tx.order.findUnique({
+        where: { id: orderId },
+        select: { paymentStatus: true }
+      });
+
+      if (!freshOrder) {
+        throw new Error('Order not found');
+      }
+
+      if (freshOrder.paymentStatus === 'paid') {
+        return 'already_paid';
+      }
+
       for (const item of order.items) {
         await tx.variant.update({
           where: { id: item.variantId },
@@ -138,9 +152,11 @@ router.post('/verify', async (req: Request, res: Response) => {
           stockReserved: false,
         },
       });
+
+      return 'paid';
     });
 
-    res.json({ success: true, data: { orderId: order.id, status: 'paid' } });
+    res.json({ success: true, data: { orderId: order.id, status: statusResult } });
   } catch (error) {
     console.error('[Payment] Error verifying payment:', error);
     res.status(500).json({ success: false, error: 'Payment verification failed' });
@@ -188,6 +204,16 @@ router.post('/webhook', async (req: Request, res: Response) => {
       }
 
       await prisma.$transaction(async (tx) => {
+        // Re-fetch order inside transaction to prevent race conditions
+        const freshOrder = await tx.order.findUnique({
+          where: { id: order.id },
+          select: { paymentStatus: true }
+        });
+
+        if (!freshOrder || freshOrder.paymentStatus === 'paid') {
+          return; // Already marked paid
+        }
+
         for (const item of order.items) {
           await tx.variant.update({
             where: { id: item.variantId },
@@ -213,6 +239,16 @@ router.post('/webhook', async (req: Request, res: Response) => {
       // Release reserved stock
       if (order.paymentStatus !== 'paid') {
         await prisma.$transaction(async (tx) => {
+          // Re-fetch order inside transaction to prevent race conditions
+          const freshOrder = await tx.order.findUnique({
+            where: { id: order.id },
+            select: { paymentStatus: true, stockReserved: true }
+          });
+
+          if (!freshOrder || freshOrder.paymentStatus === 'paid' || freshOrder.paymentStatus === 'failed' || !freshOrder.stockReserved) {
+            return; // Already paid, already failed, or stock already released
+          }
+
           for (const item of order.items) {
             await tx.variant.update({
               where: { id: item.variantId },

@@ -146,26 +146,32 @@ router.get('/', async (req: Request, res: Response) => {
       isFuzzy = true;
     }
 
-    // Compute avg rating, min/max price per product
-    const enrichedProducts = await Promise.all(
-      products.map(async (p) => {
-        const avgRating = await prisma.review.aggregate({
-          where: { productId: p.id },
-          _avg: { rating: true },
-        });
-        const prices = p.variants.map(v => v.price);
-        const mrps = p.variants.map(v => v.mrp);
-        return {
-          ...p,
-          averageRating: avgRating._avg.rating || 0,
-          reviewCount: p._count.reviews,
-          minPrice: prices.length ? Math.min(...prices) : 0,
-          maxPrice: prices.length ? Math.max(...prices) : 0,
-          minMrp: mrps.length ? Math.min(...mrps) : 0,
-          totalStock: p.variants.reduce((sum, v) => sum + v.stock, 0),
-        };
-      })
-    );
+    // Batch fetch average ratings to avoid N+1 database query overhead
+    const productIds = products.map(p => p.id);
+    const avgRatings = await prisma.review.groupBy({
+      by: ['productId'],
+      where: { productId: { in: productIds } },
+      _avg: { rating: true },
+    });
+
+    const ratingMap = new Map<string, number>();
+    for (const r of avgRatings) {
+      ratingMap.set(r.productId, r._avg.rating || 0);
+    }
+
+    const enrichedProducts = products.map((p) => {
+      const prices = p.variants.map(v => v.price);
+      const mrps = p.variants.map(v => v.mrp);
+      return {
+        ...p,
+        averageRating: ratingMap.get(p.id) || 0,
+        reviewCount: p._count.reviews,
+        minPrice: prices.length ? Math.min(...prices) : 0,
+        maxPrice: prices.length ? Math.max(...prices) : 0,
+        minMrp: mrps.length ? Math.min(...mrps) : 0,
+        totalStock: p.variants.reduce((sum, v) => sum + v.stock, 0),
+      };
+    });
 
     // Sort by price if requested (using computed minPrice)
     if (sort === 'price_asc') {

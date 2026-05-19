@@ -253,13 +253,58 @@ router.get('/orders/:id', async (req: Request, res: Response) => {
 router.put('/orders/:id', async (req: Request, res: Response) => {
   try {
     const { orderStatus, trackingNumber, courierName } = req.body;
-    const order = await prisma.order.update({
-      where: { id: req.params.id },
-      data: { ...(orderStatus && { orderStatus }), ...(trackingNumber && { trackingNumber }), ...(courierName && { courierName }) },
-      include: { items: true },
+
+    const order = await prisma.$transaction(async (tx) => {
+      const currentOrder = await tx.order.findUnique({
+        where: { id: req.params.id },
+        include: { items: true },
+      });
+
+      if (!currentOrder) {
+        throw new Error('Order not found');
+      }
+
+      // If transitioning to cancelled status and not already cancelled
+      if (orderStatus === 'cancelled' && currentOrder.orderStatus !== 'cancelled') {
+        if (currentOrder.stockDeducted) {
+          // Return deducted stock back to main inventory
+          for (const item of currentOrder.items) {
+            await tx.variant.update({
+              where: { id: item.variantId },
+              data: { stock: { increment: item.quantity } },
+            });
+          }
+        } else if (currentOrder.stockReserved) {
+          // Release reserved stock back to available stock pool
+          for (const item of currentOrder.items) {
+            await tx.variant.update({
+              where: { id: item.variantId },
+              data: { reservedStock: { decrement: item.quantity } },
+            });
+          }
+        }
+      }
+
+      return await tx.order.update({
+        where: { id: req.params.id },
+        data: {
+          ...(orderStatus && { orderStatus }),
+          ...(trackingNumber && { trackingNumber }),
+          ...(courierName && { courierName }),
+          ...(orderStatus === 'cancelled' && {
+            stockReserved: false,
+            stockDeducted: false,
+          }),
+        },
+        include: { items: true },
+      });
     });
+
     res.json({ success: true, data: order });
-  } catch (error) { console.error('Error updating order:', error); res.status(500).json({ success: false, error: 'Failed to update order' }); }
+  } catch (error: any) {
+    console.error('Error updating order:', error);
+    res.status(500).json({ success: false, error: error.message || 'Failed to update order' });
+  }
 });
 
 // ─── Customers ───────────────────────────────────────────────────────────────

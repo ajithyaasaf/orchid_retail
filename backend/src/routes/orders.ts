@@ -126,9 +126,13 @@ router.post('/create', async (req: Request, res: Response) => {
       const total = Math.max(0, subtotal - discount + deliveryCharge);
 
       // ── Step 4: Generate order number ─────────────────────────────────────
-      // Using count + 1 is race-safe inside a transaction
-      const orderCount = await tx.order.count();
-      const orderNumber = `ORD-${new Date().getFullYear()}-${String(orderCount + 1).padStart(6, '0')}`;
+      // Collision-safe and chronologically sorted human-readable order number
+      // Format: ORD-YYYYMMDD-[EpochLast5]-[Random3]
+      const currentDate = new Date();
+      const dateStr = currentDate.toISOString().slice(0, 10).replace(/-/g, '');
+      const epochStr = String(currentDate.getTime()).slice(-5);
+      const randomStr = Math.random().toString(36).substring(2, 5).toUpperCase();
+      const orderNumber = `ORD-${dateStr}-${epochStr}-${randomStr}`;
 
       // ── Step 5: Create order ──────────────────────────────────────────────
       const order = await tx.order.create({

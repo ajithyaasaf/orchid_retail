@@ -89,19 +89,49 @@ router.get('/:userId', async (req: Request, res: Response) => {
 // ─── PUT /api/addresses/:id — Update address ─────────────────────────────────
 router.put('/:id', async (req: Request, res: Response) => {
   try {
-    const { userId, isDefault, ...fields } = req.body;
+    const { userId: bodyUserId, isDefault, ...fields } = req.body;
 
-    if (isDefault && userId) {
-      await prisma.address.updateMany({
-        where: { userId, isDefault: true },
-        data: { isDefault: false },
-      });
+    // Validate phone: must be 10 digits (after stripping country code)
+    if (fields.phone) {
+      fields.phone = fields.phone.replace(/[\s\-\+]/g, '').replace(/^91/, '');
+      if (!/^\d{10}$/.test(fields.phone)) {
+        return res.status(400).json({ success: false, error: 'Phone must be a valid 10-digit Indian mobile number' });
+      }
     }
 
-    const address = await prisma.address.update({
-      where: { id: req.params.id },
-      data: { ...fields, ...(isDefault !== undefined && { isDefault }) },
+    // Validate pincode: 6 digits, starts with 1-9
+    if (fields.pincode && !/^[1-9]\d{5}$/.test(fields.pincode)) {
+      return res.status(400).json({ success: false, error: 'Invalid pincode' });
+    }
+
+    const address = await prisma.$transaction(async (tx) => {
+      let finalUserId = bodyUserId;
+
+      if (isDefault) {
+        if (!finalUserId) {
+          const existingAddress = await tx.address.findUnique({
+            where: { id: req.params.id },
+            select: { userId: true },
+          });
+          if (existingAddress) {
+            finalUserId = existingAddress.userId;
+          }
+        }
+
+        if (finalUserId) {
+          await tx.address.updateMany({
+            where: { userId: finalUserId, isDefault: true },
+            data: { isDefault: false },
+          });
+        }
+      }
+
+      return await tx.address.update({
+        where: { id: req.params.id },
+        data: { ...fields, ...(isDefault !== undefined && { isDefault }) },
+      });
     });
+
     res.json({ success: true, data: address });
   } catch (error) {
     console.error('Error updating address:', error);
