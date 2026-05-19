@@ -23,7 +23,12 @@ app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:3000',
   credentials: true,
 }));
-app.use(express.json());
+// Capture raw body buffer for secure webhook signature verification (e.g. Razorpay)
+app.use(express.json({
+  verify: (req: any, _res, buf) => {
+    req.rawBody = buf;
+  }
+}));
 app.use(cookieParser());
 
 // ─── Health Check ────────────────────────────────────────────────────────────

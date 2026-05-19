@@ -169,7 +169,9 @@ router.post('/verify', async (req: Request, res: Response) => {
 router.post('/webhook', async (req: Request, res: Response) => {
   try {
     const signature = req.headers['x-razorpay-signature'] as string;
-    const rawBody = JSON.stringify(req.body);
+    const rawBody = (req as any).rawBody
+      ? (req as any).rawBody.toString('utf8')
+      : JSON.stringify(req.body);
 
     // Verify webhook signature
     if (!signature || !razorpayService.verifyWebhookSignature(rawBody, signature)) {
