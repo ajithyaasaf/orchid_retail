@@ -1,12 +1,15 @@
 import { Router, Request, Response } from 'express';
 import prisma from '../lib/prisma';
+import { authMiddleware, AuthRequest } from '../lib/authMiddleware';
 
 const router = Router();
 
 // ─── POST /api/reviews — Submit a review ─────────────────────────────────────
-router.post('/', async (req: Request, res: Response) => {
+router.post('/', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const { productId, userId, rating, comment, images } = req.body;
+    const authReq = req as AuthRequest;
+    const { productId, rating, comment, images } = req.body;
+    const userId = authReq.user?.id;
 
     if (!productId || !userId || !rating || !comment) {
       return res.status(400).json({ success: false, error: 'Missing required fields' });
