@@ -14,28 +14,15 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Push to Hugging Face Spaces
-        env:
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}
-          HF_SPACE_URL: ${{ secrets.HF_SPACE_URL }}
+      - name: Setup Git for Push
         run: |
-          # Verify environment variables exist
-          if [ -z "$HF_TOKEN" ]; then
-            echo "❌ Error: HF_TOKEN secret is not defined in GitHub."
-            exit 1
-          fi
-          if [ -z "$HF_SPACE_URL" ]; then
-            echo "❌ Error: HF_SPACE_URL secret is not defined in GitHub."
-            exit 1
-          fi
-
-          # Configure Git metadata
           git config --global user.email "deploy-bot@orchid.internal"
           git config --global user.name "Deploy Bot"
-          
-          # Inject authentication credentials into the remote Hugging Face Git URL
-          REMOTE_URL=$(echo "$HF_SPACE_URL" | sed "s|https://|https://deploy-bot:$HF_TOKEN@|")
-          
-          # Add remote and force-push main branch to Hugging Face space
-          git remote add hf "$REMOTE_URL"
+
+      - name: Force Push to Hugging Face
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          # Push directly to the 'orchid-retail-backend' Space under user 'yaasaf'
+          git remote add hf https://yaasaf:$HF_TOKEN@huggingface.co/spaces/yaasaf/orchid-retail-backend
           git push hf main --force
