@@ -1,0 +1,14 @@
+node_modules
+dist
+.next
+backend/dist
+backend/node_modules
+frontend/.next
+frontend/node_modules
+frontend/dist
+shared/dist
+shared/node_modules
+.git
+.gitignore
+.github
+*.md

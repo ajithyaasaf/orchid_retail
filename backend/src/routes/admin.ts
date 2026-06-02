@@ -113,22 +113,22 @@ router.post('/products', async (req: Request, res: Response) => {
 router.put('/products/:id', async (req: Request, res: Response) => {
   try {
     const { name, slug, description, categoryId, images, tags, exportBadge, isFeatured, isActive, variants } = req.body;
-    
+
     // Update product and handle variants
     const product = await prisma.$transaction(async (tx) => {
       // 1. Update product basic info
       const p = await tx.product.update({
         where: { id: req.params.id },
-        data: { 
-          ...(name && { name }), 
-          ...(slug && { slug }), 
-          ...(description !== undefined && { description }), 
-          ...(categoryId && { categoryId }), 
-          ...(images && { images }), 
-          ...(tags && { tags }), 
-          ...(exportBadge !== undefined && { exportBadge }), 
-          ...(isFeatured !== undefined && { isFeatured }), 
-          ...(isActive !== undefined && { isActive }) 
+        data: {
+          ...(name && { name }),
+          ...(slug && { slug }),
+          ...(description !== undefined && { description }),
+          ...(categoryId && { categoryId }),
+          ...(images && { images }),
+          ...(tags && { tags }),
+          ...(exportBadge !== undefined && { exportBadge }),
+          ...(isFeatured !== undefined && { isFeatured }),
+          ...(isActive !== undefined && { isActive })
         },
       });
 
@@ -200,14 +200,14 @@ router.put('/variants/:id', async (req: Request, res: Response) => {
     const { price, mrp, stock, isActive, size, color, colorHex, sku, imageIndex } = req.body;
     const variant = await prisma.variant.update({
       where: { id: req.params.id },
-      data: { 
-        ...(price !== undefined && { price: Number(price) }), 
-        ...(mrp !== undefined && { mrp: Number(mrp) }), 
-        ...(stock !== undefined && { stock: Number(stock) }), 
-        ...(isActive !== undefined && { isActive }), 
-        ...(size && { size }), 
-        ...(color && { color }), 
-        ...(colorHex && { colorHex }), 
+      data: {
+        ...(price !== undefined && { price: Number(price) }),
+        ...(mrp !== undefined && { mrp: Number(mrp) }),
+        ...(stock !== undefined && { stock: Number(stock) }),
+        ...(isActive !== undefined && { isActive }),
+        ...(size && { size }),
+        ...(color && { color }),
+        ...(colorHex && { colorHex }),
         ...(sku && { sku }),
         ...(imageIndex !== undefined && { imageIndex: Number(imageIndex) })
       },

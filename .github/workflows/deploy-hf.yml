@@ -1,0 +1,41 @@
+name: Deploy to Hugging Face Spaces
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Push to Hugging Face Spaces
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_SPACE_URL: ${{ secrets.HF_SPACE_URL }}
+        run: |
+          # Verify environment variables exist
+          if [ -z "$HF_TOKEN" ]; then
+            echo "❌ Error: HF_TOKEN secret is not defined in GitHub."
+            exit 1
+          fi
+          if [ -z "$HF_SPACE_URL" ]; then
+            echo "❌ Error: HF_SPACE_URL secret is not defined in GitHub."
+            exit 1
+          fi
+
+          # Configure Git metadata
+          git config --global user.email "deploy-bot@orchid.internal"
+          git config --global user.name "Deploy Bot"
+          
+          # Inject authentication credentials into the remote Hugging Face Git URL
+          REMOTE_URL=$(echo "$HF_SPACE_URL" | sed "s|https://|https://deploy-bot:$HF_TOKEN@|")
+          
+          # Add remote and force-push main branch to Hugging Face space
+          git remote add hf "$REMOTE_URL"
+          git push hf main --force
