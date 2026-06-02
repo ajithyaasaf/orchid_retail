@@ -9,6 +9,7 @@ COPY package.json package-lock.json ./
 # Copy workspaces packages configuration files
 COPY shared/package.json ./shared/
 COPY backend/package.json ./backend/
+COPY frontend/package.json ./frontend/
 
 # Install dependencies across all workspaces
 RUN npm ci

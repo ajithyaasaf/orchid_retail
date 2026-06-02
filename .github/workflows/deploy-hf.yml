@@ -30,6 +30,10 @@ jobs:
           cp -r backend dist-deploy/
           cp -r shared dist-deploy/
           
+          # Create dummy frontend directory to satisfy npm workspaces
+          mkdir -p dist-deploy/frontend
+          echo '{"name": "frontend", "version": "0.1.0", "private": true}' > dist-deploy/frontend/package.json
+          
           # Clean up local node_modules or env files if they exist in source
           rm -rf dist-deploy/backend/node_modules
           rm -rf dist-deploy/shared/node_modules
