@@ -33,9 +33,6 @@ FROM node:20-alpine AS runner
 
 WORKDIR /app
 
-# Create a non-root group and user (Hugging Face runs as user ID 1000)
-RUN addgroup -g 1000 nodejs && adduser -u 1000 -G nodejs -s /bin/sh -D nodejs
-
 # Copy only the compiled distributions, configuration files, and node_modules
 COPY --from=builder /app/package.json /app/package-lock.json ./
 COPY --from=builder /app/node_modules ./node_modules
@@ -45,10 +42,10 @@ COPY --from=builder /app/backend/package.json ./backend/
 COPY --from=builder /app/backend/dist ./backend/dist
 COPY --from=builder /app/backend/prisma ./backend/prisma
 
-# Correct permissions for the non-root runner user
-RUN chown -R nodejs:nodejs /app
+# Correct permissions for the non-root runner user (Hugging Face runs as user ID 1000, which is pre-created as 'node' in node-alpine)
+RUN chown -R node:node /app
 
-USER nodejs
+USER node
 
 # Set production environment flags
 ENV NODE_ENV=production
