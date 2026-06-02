@@ -24,6 +24,7 @@ jobs:
           cp .dockerignore dist-deploy/
           cp package.json dist-deploy/
           cp package-lock.json dist-deploy/
+          cp README.md dist-deploy/
           
           # Copy backend and shared folders
           cp -r backend dist-deploy/
