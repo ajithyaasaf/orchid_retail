@@ -14,15 +14,44 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Git for Push
+      - name: Prepare Clean Build Directory
         run: |
-          git config --global user.email "deploy-bot@orchid.internal"
-          git config --global user.name "Deploy Bot"
+          # Create a temporary deploy directory
+          mkdir dist-deploy
+          
+          # Copy root files needed for build
+          cp Dockerfile dist-deploy/
+          cp .dockerignore dist-deploy/
+          cp package.json dist-deploy/
+          cp package-lock.json dist-deploy/
+          
+          # Copy backend and shared folders
+          cp -r backend dist-deploy/
+          cp -r shared dist-deploy/
+          
+          # Clean up local node_modules or env files if they exist in source
+          rm -rf dist-deploy/backend/node_modules
+          rm -rf dist-deploy/shared/node_modules
+          rm -f dist-deploy/backend/.env
 
-      - name: Force Push to Hugging Face
+      - name: Setup Git and Push to Hugging Face
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          # Push directly to the 'orchid-retail-backend' Space under user 'yaasaf'
+          cd dist-deploy
+          
+          # Initialize a fresh git repo to wipe full history and exclude frontend
+          git init
+          git checkout -b main
+          
+          # Setup bot credentials
+          git config --global user.email "deploy-bot@orchid.internal"
+          git config --global user.name "Deploy Bot"
+          
+          # Add only the copied files
+          git add .
+          git commit -m "Auto-deploy from GitHub Actions: $GITHUB_SHA"
+          
+          # Force push to the Space
           git remote add hf https://yaasaf:$HF_TOKEN@huggingface.co/spaces/yaasaf/orchid-retail-backend
           git push hf main --force
