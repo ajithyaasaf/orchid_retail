@@ -1,28 +1,61 @@
 'use client';
 
 import Link from 'next/link';
-import { Minus, Plus, Trash2, ShoppingBag, ArrowLeft, Tag } from 'lucide-react';
+import { Minus, Plus, Trash2, ShoppingBag, ArrowLeft, Tag, Check, AlertCircle, Loader2 } from 'lucide-react';
 import { useCartStore } from '@/stores/cartStore';
 import { formatPrice } from '@/lib/utils';
 import { calculateShippingCharge, SHIPPING } from '@orchid/shared';
+import { couponApi } from '@/lib/api';
+import { useGuestId } from '@/lib/useGuestId';
+import { useAuthStore } from '@/stores/authStore';
 import { useState, useEffect } from 'react';
 
 export default function CartPage() {
+  const guestId = useGuestId();
+  const { user } = useAuthStore();
+  const activeUserId = user?.id || guestId;
+
   const items = useCartStore(s => s.items);
   const updateQuantity = useCartStore(s => s.updateQuantity);
   const removeItem = useCartStore(s => s.removeItem);
   const subtotal = useCartStore(s => s.subtotal);
   const hasFreeShippingItem = useCartStore(s => s.hasFreeShippingItem);
+  const appliedCoupon = useCartStore(s => s.appliedCoupon);
+  const setAppliedCoupon = useCartStore(s => s.setAppliedCoupon);
+
   const [mounted, setMounted] = useState(false);
-  const [couponCode, setCouponCode] = useState('');
-  const [couponApplied, setCouponApplied] = useState(false);
+  const [couponCode, setCouponCode] = useState(appliedCoupon?.code || '');
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponError, setCouponError] = useState('');
 
   useEffect(() => { setMounted(true); }, []);
   if (!mounted) return null;
 
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim() || !activeUserId) return;
+    setCouponLoading(true);
+    setCouponError('');
+    try {
+      const res = await couponApi.validate(couponCode.trim(), activeUserId, subtotal());
+      setAppliedCoupon({ code: res.data.code, discount: res.data.discount });
+      setCouponCode(res.data.code);
+    } catch (err: any) {
+      setCouponError(err.message || 'Invalid coupon');
+      setAppliedCoupon(null);
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponCode('');
+    setCouponError('');
+  };
+
   const deliveryCharge = calculateShippingCharge(subtotal(), 'standard', hasFreeShippingItem());
-  const discount = couponApplied ? Math.min(subtotal() * 0.1, 200) : 0;
-  const total = subtotal() - discount + deliveryCharge;
+  const discount = appliedCoupon ? appliedCoupon.discount : 0;
+  const total = Math.max(0, subtotal() - discount + deliveryCharge);
 
   if (items.length === 0) {
     return (
@@ -91,24 +124,47 @@ export default function CartPage() {
             <h2 className="text-lg font-semibold text-foreground">Order Summary</h2>
 
             {/* Coupon */}
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <Tag size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
-                <input
-                  type="text"
-                  placeholder="Coupon code"
-                  value={couponCode}
-                  onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                  className="w-full pl-9 pr-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary"
-                />
+            {appliedCoupon ? (
+              <div className="flex items-center justify-between p-3 bg-success/10 border border-success/20 rounded-lg text-sm">
+                <div className="flex items-center gap-2 text-success font-medium">
+                  <Check size={16} />
+                  <span>{appliedCoupon.code} applied (-{formatPrice(appliedCoupon.discount)})</span>
+                </div>
+                <button
+                  onClick={handleRemoveCoupon}
+                  className="text-xs text-muted hover:text-error transition-colors ml-2 font-medium"
+                >
+                  Remove
+                </button>
               </div>
-              <button
-                onClick={() => setCouponApplied(!!couponCode)}
-                className="px-4 py-2.5 border border-primary text-primary rounded-lg text-sm font-medium hover:bg-primary hover:text-white transition-colors"
-              >
-                Apply
-              </button>
-            </div>
+            ) : (
+              <div>
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Tag size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+                    <input
+                      type="text"
+                      placeholder="Coupon code"
+                      value={couponCode}
+                      onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                      className="w-full pl-9 pr-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary uppercase"
+                    />
+                  </div>
+                  <button
+                    onClick={handleApplyCoupon}
+                    disabled={couponLoading || !couponCode.trim()}
+                    className="px-4 py-2.5 border border-primary text-primary rounded-lg text-sm font-medium hover:bg-primary hover:text-white transition-colors disabled:opacity-50"
+                  >
+                    {couponLoading ? <Loader2 size={16} className="animate-spin" /> : 'Apply'}
+                  </button>
+                </div>
+                {couponError && (
+                  <p className="text-xs text-error mt-1.5 flex items-center gap-1">
+                    <AlertCircle size={12} /> {couponError}
+                  </p>
+                )}
+              </div>
+            )}
 
             <div className="space-y-2.5 pt-2">
               <div className="flex justify-between text-sm">

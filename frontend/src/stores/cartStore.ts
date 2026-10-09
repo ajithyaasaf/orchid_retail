@@ -28,9 +28,15 @@ export interface CartItemData {
   }[];
 }
 
+export interface AppliedCoupon {
+  code: string;
+  discount: number;
+}
+
 interface CartStore {
   items: CartItemData[];
   isDrawerOpen: boolean;
+  appliedCoupon: AppliedCoupon | null;
 
   // Actions
   addItem: (item: CartItemData) => void;
@@ -40,6 +46,7 @@ interface CartStore {
   toggleDrawer: () => void;
   openDrawer: () => void;
   closeDrawer: () => void;
+  setAppliedCoupon: (coupon: AppliedCoupon | null) => void;
 
   // Computed
   totalItems: () => number;
@@ -52,6 +59,9 @@ export const useCartStore = create<CartStore>()(
     (set, get) => ({
       items: [],
       isDrawerOpen: false,
+      appliedCoupon: null,
+
+      setAppliedCoupon: (coupon) => set({ appliedCoupon: coupon }),
 
       addItem: (item) => {
         const existing = get().items.find(i => i.variantId === item.variantId);
@@ -85,7 +95,7 @@ export const useCartStore = create<CartStore>()(
         });
       },
 
-      clearCart: () => set({ items: [] }),
+      clearCart: () => set({ items: [], appliedCoupon: null }),
       toggleDrawer: () => set({ isDrawerOpen: !get().isDrawerOpen }),
       openDrawer: () => set({ isDrawerOpen: true }),
       closeDrawer: () => set({ isDrawerOpen: false }),

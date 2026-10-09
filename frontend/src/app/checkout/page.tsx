@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useCartStore } from '@/stores/cartStore';
 import { orderApi, paymentApi, addressApi, couponApi, type AddressData } from '@/lib/api';
 import { useGuestId } from '@/lib/useGuestId';
+import { useAuthStore } from '@/stores/authStore';
 import { formatPrice, cn } from '@/lib/utils';
 import { calculateShippingCharge } from '@orchid/shared';
 import Link from 'next/link';
@@ -39,10 +40,15 @@ function loadRazorpayScript(): Promise<boolean> {
 
 export default function CheckoutPage() {
   const guestId = useGuestId();
+  const { user } = useAuthStore();
+  const activeUserId = user?.id || guestId;
+
   const items = useCartStore(s => s.items);
   const subtotal = useCartStore(s => s.subtotal);
   const hasFreeShippingItem = useCartStore(s => s.hasFreeShippingItem);
   const clearCart = useCartStore(s => s.clearCart);
+  const storeAppliedCoupon = useCartStore(s => s.appliedCoupon);
+  const setStoreAppliedCoupon = useCartStore(s => s.setAppliedCoupon);
   
   const [mounted, setMounted] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
@@ -60,15 +66,15 @@ export default function CheckoutPage() {
 
   // Order Details
   const [deliveryOption, setDeliveryOption] = useState<'standard' | 'express'>('standard');
-  const [couponCode, setCouponCode] = useState('');
-  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discount: number } | null>(null);
+  const [couponCode, setCouponCode] = useState(storeAppliedCoupon?.code || '');
+  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discount: number } | null>(storeAppliedCoupon || null);
 
   useEffect(() => { setMounted(true); }, []);
 
-  // Fetch saved addresses for this guest
+  // Fetch saved addresses for the authenticated user or guest
   useEffect(() => {
-    if (mounted && guestId) {
-      addressApi.list(guestId)
+    if (mounted && activeUserId) {
+      addressApi.list(activeUserId, user?.id ? guestId : undefined)
         .then(res => {
           setSavedAddresses(res.data);
           const def = res.data.find(a => a.isDefault);
@@ -78,9 +84,9 @@ export default function CheckoutPage() {
         })
         .catch(err => console.error('Error loading addresses:', err));
     }
-  }, [mounted, guestId]);
+  }, [mounted, activeUserId, guestId, user?.id]);
 
-  if (!mounted || !guestId) return null;
+  if (!mounted || !activeUserId) return null;
 
   const deliveryCharge = calculateShippingCharge(subtotal(), deliveryOption, hasFreeShippingItem());
   const discount = appliedCoupon?.discount || 0;
@@ -113,7 +119,7 @@ export default function CheckoutPage() {
     setLoading(true);
     setError('');
     try {
-      const res = await addressApi.create({ ...addressForm, userId: guestId });
+      const res = await addressApi.create({ ...addressForm, userId: activeUserId });
       setSavedAddresses([res.data, ...savedAddresses]);
       setSelectedAddressId(res.data.id);
       setShowAddressForm(false);
@@ -130,8 +136,10 @@ export default function CheckoutPage() {
     setLoading(true);
     setError('');
     try {
-      const res = await couponApi.validate(couponCode, guestId, subtotal());
-      setAppliedCoupon({ code: res.data.code, discount: res.data.discount });
+      const res = await couponApi.validate(couponCode, activeUserId, subtotal());
+      const c = { code: res.data.code, discount: res.data.discount };
+      setAppliedCoupon(c);
+      setStoreAppliedCoupon(c);
     } catch (err: any) {
       setError(err.message || 'Invalid coupon');
     } finally {
@@ -156,8 +164,13 @@ export default function CheckoutPage() {
 
       // 2. Create Order in DB
       const orderResponse = await orderApi.create({
-        userId: guestId,
-        items: items.map(item => ({ variantId: item.variantId, quantity: item.quantity })),
+        userId: activeUserId,
+        items: items.map(item => ({
+          variantId: item.variantId,
+          quantity: item.quantity,
+          comboId: item.comboId,
+          subItems: item.subItems,
+        })),
         shippingAddressId: selectedAddressId,
         deliveryOption,
         couponCode: appliedCoupon?.code
@@ -368,7 +381,7 @@ export default function CheckoutPage() {
                     className="w-full pl-9 pr-3 py-2 border border-border rounded-lg text-xs uppercase focus:border-primary focus:outline-none disabled:bg-surface" />
                 </div>
                 {appliedCoupon ? (
-                  <button onClick={() => { setAppliedCoupon(null); setCouponCode(''); }} className="p-2 text-error hover:bg-error/10 rounded-lg transition-colors"><Trash2 size={18} /></button>
+                  <button onClick={() => { setAppliedCoupon(null); setStoreAppliedCoupon(null); setCouponCode(''); }} className="p-2 text-error hover:bg-error/10 rounded-lg transition-colors"><Trash2 size={18} /></button>
                 ) : (
                   <button onClick={handleApplyCoupon} disabled={!couponCode || loading} className="px-4 py-2 bg-foreground text-white rounded-lg text-xs font-semibold">Apply</button>
                 )}

@@ -5,6 +5,7 @@ import { Package, Clock, Truck, CheckCircle, Loader2, AlertCircle } from 'lucide
 import { orderApi } from '@/lib/api';
 import { formatPrice, cn } from '@/lib/utils';
 import { useGuestId } from '@/lib/useGuestId';
+import { useAuthStore } from '@/stores/authStore';
 import Link from 'next/link';
 
 const STATUS_ICONS: Record<string, React.ReactNode> = {
@@ -17,17 +18,20 @@ const STATUS_ICONS: Record<string, React.ReactNode> = {
 
 export default function OrdersPage() {
   const guestId = useGuestId();
+  const { user } = useAuthStore();
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  const activeUserId = user?.id || guestId;
+
   useEffect(() => {
-    if (!guestId) return;
+    if (!activeUserId) return;
     
     const fetchOrders = async () => {
       try {
-        const res = await orderApi.getUserOrders(guestId) as any;
-        setOrders(res.data);
+        const res = await orderApi.getUserOrders(activeUserId, user?.id ? guestId : undefined) as any;
+        setOrders(res.data || []);
       } catch (err: any) {
         setError(err.message || 'Failed to load orders');
       } finally {
@@ -36,9 +40,9 @@ export default function OrdersPage() {
     };
 
     fetchOrders();
-  }, [guestId]);
+  }, [activeUserId, guestId, user?.id]);
 
-  if (!guestId || loading) {
+  if (!activeUserId || loading) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <Loader2 className="animate-spin text-primary mb-4" size={40} />

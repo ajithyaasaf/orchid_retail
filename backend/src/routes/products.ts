@@ -99,51 +99,125 @@ router.get('/', async (req: Request, res: Response) => {
       where.variants = { some: variantWhere };
     }
 
-    // Sort
-    let orderBy: Record<string, string> = {};
-    switch (sort) {
-      case 'price_asc': orderBy = { createdAt: 'asc' }; break; // Will sort by computed price client-side
-      case 'price_desc': orderBy = { createdAt: 'desc' }; break;
-      case 'oldest': orderBy = { createdAt: 'asc' }; break;
-      case 'newest': default: orderBy = { createdAt: 'desc' }; break;
-    }
-
-    let [products, total] = await Promise.all([
-      prisma.product.findMany({
-        where,
-        include: {
-          category: true,
-          variants: { where: { isActive: true }, orderBy: { price: 'asc' } },
-          _count: { select: { reviews: true } },
-        },
-        orderBy,
-        skip,
-        take: limitNum,
-      }),
-      prisma.product.count({ where }),
-    ]);
-
+    let products: any[] = [];
+    let total = 0;
     let isFuzzy = false;
-    // ─── FUZZY FALLBACK: If no results, try matching by first 3 letters ───
-    if (products.length === 0 && search && (search as string).length > 2) {
-      const firstThree = (search as string).substring(0, 3).toLowerCase();
-      products = await prisma.product.findMany({
-        where: {
-          isActive: true,
-          OR: [
-            { name: { contains: firstThree, mode: 'insensitive' } },
-            { tags: { hasSome: [firstThree] } },
-          ],
+
+    if (sort === 'price_asc' || sort === 'price_desc') {
+      // ─── Global Price Sort across Pagination ──────────────────────────────
+      // Phase 1: Retrieve all matching product IDs and their variant prices
+      const matched = await prisma.product.findMany({
+        where,
+        select: {
+          id: true,
+          variants: {
+            where: { isActive: true },
+            select: { price: true },
+          },
         },
-        include: {
-          category: true,
-          variants: { where: { isActive: true }, orderBy: { price: 'asc' } },
-          _count: { select: { reviews: true } },
-        },
-        take: limitNum,
       });
-      total = products.length;
-      isFuzzy = true;
+
+      // Handle fuzzy fallback if no direct matches
+      if (matched.length === 0 && search && (search as string).length > 2) {
+        const firstThree = (search as string).substring(0, 3).toLowerCase();
+        const fuzzyMatched = await prisma.product.findMany({
+          where: {
+            isActive: true,
+            OR: [
+              { name: { contains: firstThree, mode: 'insensitive' } },
+              { tags: { hasSome: [firstThree] } },
+            ],
+          },
+          select: {
+            id: true,
+            variants: {
+              where: { isActive: true },
+              select: { price: true },
+            },
+          },
+        });
+
+        if (fuzzyMatched.length > 0) {
+          isFuzzy = true;
+          matched.push(...fuzzyMatched);
+        }
+      }
+
+      total = matched.length;
+
+      // Calculate global minPrice for correct pagination across all pages
+      const sortedItems = matched.map(m => {
+        const prices = m.variants.map(v => v.price);
+        const minP = prices.length ? Math.min(...prices) : (sort === 'price_asc' ? Infinity : -Infinity);
+        return { id: m.id, minPrice: minP };
+      });
+
+      sortedItems.sort((a, b) => (sort === 'price_asc' ? a.minPrice - b.minPrice : b.minPrice - a.minPrice));
+
+      const pageIds = sortedItems.slice(skip, skip + limitNum).map(i => i.id);
+
+      if (pageIds.length > 0) {
+        const rawProducts = await prisma.product.findMany({
+          where: { id: { in: pageIds } },
+          include: {
+            category: true,
+            variants: { where: { isActive: true }, orderBy: { price: 'asc' } },
+            _count: { select: { reviews: true } },
+          },
+        });
+
+        // Retain the global sort order
+        const idMap = new Map(pageIds.map((id, idx) => [id, idx]));
+        rawProducts.sort((a, b) => (idMap.get(a.id) ?? 0) - (idMap.get(b.id) ?? 0));
+        products = rawProducts;
+      }
+    } else {
+      // ─── Standard Database Pagination ─────────────────────────────────────
+      let orderBy: Record<string, string> = {};
+      switch (sort) {
+        case 'oldest': orderBy = { createdAt: 'asc' }; break;
+        case 'newest': default: orderBy = { createdAt: 'desc' }; break;
+      }
+
+      const [standardProducts, standardTotal] = await Promise.all([
+        prisma.product.findMany({
+          where,
+          include: {
+            category: true,
+            variants: { where: { isActive: true }, orderBy: { price: 'asc' } },
+            _count: { select: { reviews: true } },
+          },
+          orderBy,
+          skip,
+          take: limitNum,
+        }),
+        prisma.product.count({ where }),
+      ]);
+
+      products = standardProducts;
+      total = standardTotal;
+
+      // FUZZY FALLBACK: If no results, try matching by first 3 letters
+      if (products.length === 0 && search && (search as string).length > 2) {
+        const firstThree = (search as string).substring(0, 3).toLowerCase();
+        products = await prisma.product.findMany({
+          where: {
+            isActive: true,
+            OR: [
+              { name: { contains: firstThree, mode: 'insensitive' } },
+              { tags: { hasSome: [firstThree] } },
+            ],
+          },
+          include: {
+            category: true,
+            variants: { where: { isActive: true }, orderBy: { price: 'asc' } },
+            _count: { select: { reviews: true } },
+          },
+          take: limitNum,
+        });
+        total = products.length;
+        isFuzzy = true;
+      }
     }
 
     // Batch fetch average ratings to avoid N+1 database query overhead
@@ -159,26 +233,19 @@ router.get('/', async (req: Request, res: Response) => {
       ratingMap.set(r.productId, r._avg.rating || 0);
     }
 
-    const enrichedProducts = products.map((p) => {
-      const prices = p.variants.map(v => v.price);
-      const mrps = p.variants.map(v => v.mrp);
+    const enrichedProducts = products.map((p: any) => {
+      const prices = (p.variants || []).map((v: any) => v.price as number);
+      const mrps = (p.variants || []).map((v: any) => v.mrp as number);
       return {
         ...p,
         averageRating: ratingMap.get(p.id) || 0,
-        reviewCount: p._count.reviews,
+        reviewCount: p._count?.reviews || 0,
         minPrice: prices.length ? Math.min(...prices) : 0,
         maxPrice: prices.length ? Math.max(...prices) : 0,
         minMrp: mrps.length ? Math.min(...mrps) : 0,
-        totalStock: p.variants.reduce((sum, v) => sum + v.stock, 0),
+        totalStock: (p.variants || []).reduce((sum: number, v: any) => sum + (v.stock || 0), 0),
       };
     });
-
-    // Sort by price if requested (using computed minPrice)
-    if (sort === 'price_asc') {
-      enrichedProducts.sort((a, b) => a.minPrice - b.minPrice);
-    } else if (sort === 'price_desc') {
-      enrichedProducts.sort((a, b) => b.minPrice - a.minPrice);
-    }
 
     res.json({
       success: true,

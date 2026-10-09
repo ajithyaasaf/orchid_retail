@@ -55,9 +55,12 @@ app.use((err: Error, _req: express.Request, res: express.Response, _next: expres
   res.status(500).json({ success: false, error: 'Internal server error' });
 });
 
+import { startOrderReaper } from './services/orderReaperService';
+
 // ─── Start Server ────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
   console.log(`🌸 Orchid Retail API running on http://localhost:${PORT}`);
+  startOrderReaper();
 });
 
 export default app;

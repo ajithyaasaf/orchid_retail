@@ -18,7 +18,12 @@ function LoginForm() {
     e.preventDefault();
     const success = await login(email, password);
     if (success) {
-      router.push(redirectTo);
+      const user = useAuthStore.getState().user;
+      if (user && (user.role === 'admin' || user.role === 'super_admin') && (redirectTo === '/' || redirectTo === '/admin')) {
+        router.push('/admin/portal');
+      } else {
+        router.push(redirectTo);
+      }
     }
   };
 

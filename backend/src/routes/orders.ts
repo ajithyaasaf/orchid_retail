@@ -34,6 +34,75 @@ router.post('/create', async (req: Request, res: Response) => {
           throw new Error('Invalid item in cart');
         }
 
+        // ── Handle Combo Bundle ──────────────────────────────────────────────
+        if (item.comboId) {
+          const combo = await tx.combo.findUnique({
+            where: { id: item.comboId },
+            include: { products: true },
+          });
+
+          if (!combo || !combo.isActive) {
+            throw new Error(`The selected bundle deal is no longer active`);
+          }
+
+          if (!item.subItems || !Array.isArray(item.subItems) || item.subItems.length === 0) {
+            throw new Error(`Bundle items are missing for "${combo.name}"`);
+          }
+
+          const comboLineTotal = combo.price * item.quantity;
+          subtotal += comboLineTotal;
+
+          const numSub = item.subItems.length;
+          const baseSubPrice = Math.floor((combo.price / numSub) * 100) / 100;
+          const remainder = Math.round((combo.price - baseSubPrice * numSub) * 100) / 100;
+
+          for (let sIdx = 0; sIdx < numSub; sIdx++) {
+            const sub = item.subItems[sIdx];
+            const subVariant = await tx.variant.findUnique({
+              where: { id: sub.variantId },
+              include: { product: { select: { name: true, images: true, isActive: true, freeShipping: true } } },
+            });
+
+            if (!subVariant || !subVariant.isActive || !subVariant.product.isActive) {
+              throw new Error(`Item "${subVariant?.product?.name || 'A product'}" in bundle is no longer available`);
+            }
+
+            const available = subVariant.stock - subVariant.reservedStock;
+            if (item.quantity > available) {
+              throw new Error(
+                `Only ${available} unit(s) available for bundle item ${subVariant.product.name} (${subVariant.size}/${subVariant.color})`
+              );
+            }
+
+            const subPrice = sIdx === numSub - 1 ? baseSubPrice + remainder : baseSubPrice;
+            const subLineTotal = Math.round(subPrice * item.quantity * 100) / 100;
+
+            orderItems.push({
+              productId: subVariant.productId,
+              variantId: subVariant.id,
+              comboId: combo.id,
+              productName: `${combo.name} (${subVariant.product.name})`,
+              productImage: (subVariant.imageIndex !== undefined && subVariant.product.images[subVariant.imageIndex]) || combo.images[0] || subVariant.product.images[0] || '',
+              variantSize: subVariant.size,
+              variantColor: subVariant.color,
+              sku: subVariant.sku,
+              price: subPrice,
+              mrp: subVariant.mrp,
+              quantity: item.quantity,
+              lineTotal: subLineTotal,
+              freeShipping: subVariant.product.freeShipping || false,
+            });
+
+            // Reserve stock for each constituent variant
+            await tx.variant.update({
+              where: { id: subVariant.id },
+              data: { reservedStock: { increment: item.quantity } },
+            });
+          }
+          continue;
+        }
+
+        // ── Handle Standard Variant ──────────────────────────────────────────
         const variant = await tx.variant.findUnique({
           where: { id: item.variantId },
           include: { product: { select: { name: true, images: true, isActive: true, freeShipping: true } } },
@@ -196,8 +265,13 @@ router.get('/:id', async (req: Request, res: Response) => {
 // ─── GET /api/orders/user/:userId ────────────────────────────────────────────
 router.get('/user/:userId', async (req: Request, res: Response) => {
   try {
+    const { guestId } = req.query;
+    const userIds = [req.params.userId];
+    if (guestId && typeof guestId === 'string' && guestId !== req.params.userId) {
+      userIds.push(guestId);
+    }
     const orders = await prisma.order.findMany({
-      where: { userId: req.params.userId },
+      where: { userId: { in: userIds } },
       include: { items: true, shippingAddress: true },
       orderBy: { createdAt: 'desc' },
     });

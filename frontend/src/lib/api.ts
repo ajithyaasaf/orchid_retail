@@ -74,8 +74,15 @@ export const categoryApi = {
 };
 
 // ─── Cart APIs ───────────────────────────────────────────────────────────────
+export interface OrderItemInput {
+  variantId: string;
+  quantity: number;
+  comboId?: string;
+  subItems?: any[];
+}
+
 export const cartApi = {
-  validate: (items: { variantId: string; quantity: number }[]) =>
+  validate: (items: OrderItemInput[]) =>
     fetchApi('/cart/validate', { method: 'POST', body: JSON.stringify({ items }) }),
 };
 
@@ -83,18 +90,22 @@ export const cartApi = {
 export const orderApi = {
   create: (data: {
     userId: string;
-    items: { variantId: string; quantity: number }[];
+    items: OrderItemInput[];
     shippingAddressId: string;
     deliveryOption: 'standard' | 'express';
     couponCode?: string;
   }) => fetchApi('/orders/create', { method: 'POST', body: JSON.stringify(data) }),
   getById: (id: string) => fetchApi(`/orders/${id}`),
-  getUserOrders: (userId: string) => fetchApi(`/orders/user/${userId}`),
+  getUserOrders: (userId: string, guestId?: string | null) =>
+    fetchApi(`/orders/user/${encodeURIComponent(userId)}${guestId ? `?guestId=${encodeURIComponent(guestId)}` : ''}`),
 };
 
 // ─── Address APIs ─────────────────────────────────────────────────────────────
 export const addressApi = {
-  list: (userId: string) => fetchApi<{ success: boolean; data: AddressData[] }>(`/addresses/${userId}`),
+  list: (userId: string, guestId?: string | null) =>
+    fetchApi<{ success: boolean; data: AddressData[] }>(
+      `/addresses/${encodeURIComponent(userId)}${guestId ? `?guestId=${encodeURIComponent(guestId)}` : ''}`
+    ),
   create: (data: {
     userId: string; name: string; phone: string; addressLine1: string;
     addressLine2?: string; city: string; state: string; pincode: string; isDefault?: boolean;

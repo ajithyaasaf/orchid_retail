@@ -1,9 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { adminApi } from '@/lib/api';
 import { formatPrice } from '@/lib/utils';
-import { TrendingUp, ShoppingCart, Package, Users, AlertTriangle } from 'lucide-react';
+import { TrendingUp, ShoppingCart, Package, Users, AlertTriangle, Building2, ArrowRight } from 'lucide-react';
 
 interface DashboardData {
   totalRevenue: number;
@@ -47,7 +48,36 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+      {/* Multi-Store Navigation Banner */}
+      <div className="bg-gradient-to-r from-slate-900 to-indigo-950 border border-white/10 rounded-2xl p-5 text-white shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/20 text-primary border border-primary/30 uppercase tracking-wider">
+              Retail B2C Channel
+            </span>
+            <span className="text-xs text-gray-400 font-mono">orchidwears.com</span>
+          </div>
+          <h2 className="text-lg font-bold text-white">Retail Store Dashboard</h2>
+          <p className="text-xs text-gray-300">
+            Consumer sales, sizes, retail orders, and promotional coupons.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2 self-start md:self-auto">
+          <Link
+            href="/admin/portal"
+            className="px-3.5 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-semibold transition-all border border-white/10 flex items-center gap-1.5"
+          >
+            All Workspaces
+          </Link>
+          <a
+            href={process.env.NEXT_PUBLIC_WHOLESALE_ADMIN_URL || 'http://localhost:3001/admin'}
+            className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold transition-all shadow flex items-center gap-2"
+          >
+            <Building2 size={15} /> Wholesale Hub (orchidhub.in) ↗
+          </a>
+        </div>
+      </div>
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

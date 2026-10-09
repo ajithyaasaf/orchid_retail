@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { MapPin, Plus, Loader2, AlertCircle, Trash2, Edit2, Check } from 'lucide-react';
 import { addressApi, AddressData } from '@/lib/api';
 import { useGuestId } from '@/lib/useGuestId';
+import { useAuthStore } from '@/stores/authStore';
 import { cn } from '@/lib/utils';
 
 const INDIAN_STATES = [
@@ -16,6 +17,9 @@ const INDIAN_STATES = [
 
 export default function AddressesPage() {
   const guestId = useGuestId();
+  const { user } = useAuthStore();
+  const activeUserId = user?.id || guestId;
+
   const [addresses, setAddresses] = useState<AddressData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -29,10 +33,10 @@ export default function AddressesPage() {
   });
 
   const fetchAddresses = async () => {
-    if (!guestId) return;
+    if (!activeUserId) return;
     try {
       setLoading(true);
-      const res = await addressApi.list(guestId);
+      const res = await addressApi.list(activeUserId, user?.id ? guestId : undefined);
       setAddresses(res.data);
     } catch (err: any) {
       setError(err.message || 'Failed to load addresses');
@@ -43,7 +47,7 @@ export default function AddressesPage() {
 
   useEffect(() => {
     fetchAddresses();
-  }, [guestId]);
+  }, [activeUserId, guestId, user?.id]);
 
   const handleAddNew = () => {
     setForm({ name: '', phone: '', addressLine1: '', addressLine2: '', city: '', state: 'Tamil Nadu', pincode: '', isDefault: false });
@@ -76,7 +80,7 @@ export default function AddressesPage() {
   const handleSetDefault = async (id: string) => {
     try {
       setLoading(true);
-      await addressApi.update(id, { isDefault: true, userId: guestId! });
+      await addressApi.update(id, { isDefault: true, userId: activeUserId! });
       await fetchAddresses();
     } catch (err: any) {
       alert(err.message || 'Failed to set default address');
@@ -98,14 +102,14 @@ export default function AddressesPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!guestId || !isFormValid()) return;
+    if (!activeUserId || !isFormValid()) return;
 
     setIsSubmitting(true);
     try {
       if (editingId) {
-        await addressApi.update(editingId, { ...form, userId: guestId });
+        await addressApi.update(editingId, { ...form, userId: activeUserId });
       } else {
-        await addressApi.create({ ...form, userId: guestId });
+        await addressApi.create({ ...form, userId: activeUserId });
       }
       setShowForm(false);
       await fetchAddresses();
@@ -116,7 +120,7 @@ export default function AddressesPage() {
     }
   };
 
-  if (!guestId || loading && addresses.length === 0 && !showForm) {
+  if (!activeUserId || (loading && addresses.length === 0 && !showForm)) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <Loader2 className="animate-spin text-primary mb-4" size={40} />

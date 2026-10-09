@@ -6,19 +6,62 @@ const router = Router();
 // ─── POST /api/cart/validate — Validate cart items against real stock ─────────
 router.post('/validate', async (req: Request, res: Response) => {
   try {
-    const { items } = req.body as { items: { variantId: string; quantity: number }[] };
-
-    if (!items || !Array.isArray(items) || items.length === 0) {
-      return res.status(400).json({ success: false, error: 'Cart items required' });
+    interface CartItemInput {
+      variantId: string;
+      quantity: number;
+      comboId?: string;
+      subItems?: Array<{ variantId: string; productId: string }>;
     }
 
-    const variantIds = items.map(i => i.variantId);
+    const { items } = req.body;
+    if (!items || !Array.isArray(items)) {
+      return res.status(400).json({ success: false, error: 'Invalid or missing items array' });
+    }
+
+    const cartItems = items as CartItemInput[];
+    const directVariantIds = cartItems.filter(i => !i.comboId).map(i => i.variantId);
+    const subItemVariantIds = cartItems
+      .filter(i => i.comboId && i.subItems)
+      .flatMap(i => i.subItems!.map(s => s.variantId));
+
+    const allVariantIds = Array.from(new Set([...directVariantIds, ...subItemVariantIds]));
+
     const variants = await prisma.variant.findMany({
-      where: { id: { in: variantIds }, isActive: true },
+      where: { id: { in: allVariantIds }, isActive: true },
       include: { product: { select: { name: true, images: true, isActive: true } } },
     });
 
-    const validationResults = items.map(item => {
+    const validationResults = cartItems.map(item => {
+      // If item is a combo bundle
+      if (item.comboId && item.subItems && item.subItems.length > 0) {
+        let comboValid = true;
+        let failMessage: string | undefined;
+
+        for (const sub of item.subItems) {
+          const v = variants.find(vr => vr.id === sub.variantId);
+          if (!v || !v.isActive || !v.product.isActive) {
+            comboValid = false;
+            failMessage = `Bundle item "${v?.product.name || 'product'}" is no longer available`;
+            break;
+          }
+          const available = v.stock - v.reservedStock;
+          if (item.quantity > available) {
+            comboValid = false;
+            failMessage = `Only ${available} unit(s) available for ${v.product.name} in bundle`;
+            break;
+          }
+        }
+
+        return {
+          variantId: item.variantId,
+          requestedQty: item.quantity,
+          availableStock: comboValid ? item.quantity : 0,
+          isValid: comboValid,
+          message: failMessage,
+        };
+      }
+
+      // Standard single variant
       const variant = variants.find(v => v.id === item.variantId);
       if (!variant) {
         return {

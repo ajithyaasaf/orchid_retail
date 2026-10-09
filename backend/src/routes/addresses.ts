@@ -75,8 +75,13 @@ router.post('/', async (req: Request, res: Response) => {
 // ─── GET /api/addresses/:userId — List user's addresses ──────────────────────
 router.get('/:userId', async (req: Request, res: Response) => {
   try {
+    const { guestId } = req.query;
+    const userIds = [req.params.userId];
+    if (guestId && typeof guestId === 'string' && guestId !== req.params.userId) {
+      userIds.push(guestId);
+    }
     const addresses = await prisma.address.findMany({
-      where: { userId: req.params.userId },
+      where: { userId: { in: userIds } },
       orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
     });
     res.json({ success: true, data: addresses });
