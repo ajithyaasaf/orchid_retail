@@ -68,6 +68,7 @@ export default function AdminProductsPage() {
   const [showModal, setShowModal] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editingProduct, setEditingProduct] = useState<ProductData | null>(null);
+  const [pageSize, setPageSize] = useState(20);
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 });
 
   // Form state
@@ -85,21 +86,39 @@ export default function AdminProductsPage() {
   const [variants, setVariants] = useState<VariantData[]>([{ ...EMPTY_VARIANT }]);
   const [formError, setFormError] = useState('');
 
-  const fetchProducts = useCallback(async (page = 1) => {
+  const fetchProducts = useCallback(async (page = 1, limit = pageSize) => {
     setLoading(true);
     try {
-      const res = await adminApi.getProducts({ search: search || undefined, page, limit: 20 }) as any;
+      const res = await adminApi.getProducts({ search: search || undefined, page, limit }) as any;
       setProducts(res.data || []); 
-      setPagination(res.pagination || { page: 1, totalPages: 1, total: 0 });
+      const total = res.pagination?.total || 0;
+      setPagination(res.pagination || { 
+        page, 
+        limit, 
+        totalPages: Math.max(1, Math.ceil(total / limit)), 
+        total 
+      });
     } catch (e) { 
       console.error(e); 
     }
     setLoading(false);
-  }, [search]);
+  }, [search, pageSize]);
 
   useEffect(() => { 
     fetchProducts(); 
   }, [fetchProducts]);
+
+  // Lock background body scroll when modal is open
+  useEffect(() => {
+    if (showModal) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [showModal]);
 
   useEffect(() => {
     adminApi.getCategories().then((res: any) => {
@@ -418,29 +437,119 @@ export default function AdminProductsPage() {
             </table>
           </div>
 
-          {pagination.totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2">
-              {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map(p => (
-                <button key={p} onClick={() => fetchProducts(p)} className={cn('w-8 h-8 rounded-lg text-xs font-medium', p === pagination.page ? 'bg-primary text-white' : 'bg-white border border-border hover:border-primary')}>
-                  {p}
-                </button>
-              ))}
+          {/* Pagination & Summary Bar - ALWAYS VISIBLE */}
+          <div className="bg-white border border-border rounded-xl p-3.5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xs">
+            {/* Left: Summary Count */}
+            <div className="text-xs text-muted flex items-center gap-2">
+              <span>
+                Showing{' '}
+                <strong className="text-foreground font-semibold">
+                  {pagination.total === 0 ? 0 : (pagination.page - 1) * pageSize + 1}
+                </strong>{' '}
+                to{' '}
+                <strong className="text-foreground font-semibold">
+                  {Math.min(pagination.page * pageSize, pagination.total)}
+                </strong>{' '}
+                of <strong className="text-foreground font-semibold">{pagination.total}</strong> products
+              </span>
             </div>
-          )}
+
+            {/* Middle: Page Size Selector */}
+            <div className="flex items-center gap-2 text-xs text-muted">
+              <span>Show:</span>
+              <select
+                value={pageSize}
+                onChange={e => {
+                  const newSize = Number(e.target.value);
+                  setPageSize(newSize);
+                  fetchProducts(1, newSize);
+                }}
+                className="px-2 py-1 bg-surface border border-border rounded-md text-xs font-medium text-foreground focus:outline-none focus:border-primary"
+              >
+                <option value={10}>10 per page</option>
+                <option value={20}>20 per page</option>
+                <option value={50}>50 per page</option>
+              </select>
+            </div>
+
+            {/* Right: Page Navigation Controls */}
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => {
+                  if (pagination.page > 1) fetchProducts(pagination.page - 1, pageSize);
+                }}
+                disabled={pagination.page <= 1}
+                className="px-2.5 py-1 text-xs font-medium rounded-lg border border-border bg-white hover:bg-surface disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                ← Prev
+              </button>
+
+              {/* Dynamic Page Pills */}
+              {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                let pageNum = i + 1;
+                if (pagination.totalPages > 5 && pagination.page > 3) {
+                  pageNum = Math.min(pagination.totalPages - 4 + i, pagination.page - 2 + i);
+                }
+                return (
+                  <button
+                    key={pageNum}
+                    type="button"
+                    onClick={() => fetchProducts(pageNum, pageSize)}
+                    className={cn(
+                      'w-8 h-8 rounded-lg text-xs font-semibold transition-colors',
+                      pageNum === pagination.page
+                        ? 'bg-primary text-white shadow-xs'
+                        : 'bg-white border border-border hover:border-primary text-foreground'
+                    )}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+
+              {pagination.totalPages > 5 && pagination.page < pagination.totalPages - 2 && (
+                <span className="text-xs text-muted px-1">...</span>
+              )}
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (pagination.page < pagination.totalPages) fetchProducts(pagination.page + 1, pageSize);
+                }}
+                disabled={pagination.page >= pagination.totalPages}
+                className="px-2.5 py-1 text-xs font-medium rounded-lg border border-border bg-white hover:bg-surface disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                Next →
+              </button>
+            </div>
+          </div>
         </>
       )}
 
       {/* Product Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center pt-6 pb-6 overflow-y-auto bg-black/50" onClick={() => setShowModal(false)}>
-          <div className="bg-white rounded-2xl w-full max-w-4xl mx-4 shadow-2xl flex flex-col max-h-[92vh]" onClick={e => e.stopPropagation()}>
-            {/* Modal Header */}
-            <div className="flex items-center justify-between p-5 border-b border-border">
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/60 backdrop-blur-xs overflow-y-auto animate-fade-in" 
+          onClick={() => setShowModal(false)}
+        >
+          <div 
+            className="bg-white rounded-2xl w-full max-w-4xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden border border-border my-auto" 
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Modal Sticky Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-white shrink-0 sticky top-0 z-10">
               <div>
-                <h2 className="text-lg font-semibold">{editingProduct ? 'Edit Product' : 'Add Product'}</h2>
+                <h2 className="text-lg font-bold text-foreground">{editingProduct ? 'Edit Product' : 'Add Product'}</h2>
                 <p className="text-xs text-muted">Fill in basic info, category, media, and size/color variants</p>
               </div>
-              <button onClick={() => setShowModal(false)} className="p-1.5 hover:bg-surface rounded-lg text-muted hover:text-foreground"><X size={18} /></button>
+              <button 
+                onClick={() => setShowModal(false)} 
+                className="p-1.5 hover:bg-surface rounded-lg text-muted hover:text-foreground transition-colors"
+                title="Close"
+              >
+                <X size={18} />
+              </button>
             </div>
 
             {/* Modal Body */}
@@ -766,12 +875,17 @@ export default function AdminProductsPage() {
               </div>
             </div>
 
-            {/* Modal Footer */}
-            <div className="p-5 border-t border-border flex justify-end gap-3 bg-surface/30">
-              <button onClick={() => setShowModal(false)} className="px-4 py-2.5 border border-border rounded-lg text-sm font-medium hover:bg-surface">Cancel</button>
-              <button onClick={handleSave} disabled={saving} className={cn('px-6 py-2.5 bg-primary text-white rounded-lg text-sm font-medium', saving ? 'opacity-60' : 'hover:bg-primary-dark')}>
-                {saving ? <Loader2 size={14} className="animate-spin inline mr-1" /> : null}{editingProduct ? 'Update Product' : 'Create Product'}
-              </button>
+            {/* Modal Sticky Footer */}
+            <div className="px-6 py-4 border-t border-border flex items-center justify-between bg-surface/50 shrink-0 sticky bottom-0 z-10">
+              <span className="text-xs text-muted hidden sm:inline">
+                {variants.length} variant{variants.length > 1 ? 's' : ''} configured
+              </span>
+              <div className="flex items-center gap-3 ml-auto">
+                <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 border border-border rounded-lg text-sm font-medium hover:bg-white transition-colors">Cancel</button>
+                <button type="button" onClick={handleSave} disabled={saving} className={cn('px-6 py-2 bg-primary text-white rounded-lg text-sm font-semibold transition-all shadow-sm', saving ? 'opacity-60 cursor-wait' : 'hover:bg-primary-dark')}>
+                  {saving ? <Loader2 size={14} className="animate-spin inline mr-1.5" /> : null}{editingProduct ? 'Update Product' : 'Create Product'}
+                </button>
+              </div>
             </div>
           </div>
         </div>

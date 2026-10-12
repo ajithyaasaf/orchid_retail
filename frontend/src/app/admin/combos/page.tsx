@@ -83,6 +83,15 @@ export default function AdminCombosPage() {
   useEffect(() => { fetchCombos(); }, [fetchCombos]);
   useEffect(() => { if (showModal) fetchAvailableProducts(); }, [showModal, fetchAvailableProducts]);
 
+  useEffect(() => {
+    if (showModal) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [showModal]);
+
   const openCreateModal = () => {
     setEditingCombo(null);
     setForm({ name: '', slug: '', description: '', images: [''], price: '' as any, mrp: '' as any, isFeatured: false });
@@ -234,9 +243,9 @@ export default function AdminCombosPage() {
 
       {/* Combo Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center pt-8 pb-8 overflow-y-auto bg-black/50" onClick={() => setShowModal(false)}>
-          <div className="bg-white rounded-2xl w-full max-w-4xl mx-4 shadow-2xl" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-5 border-b border-border">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/60 backdrop-blur-xs overflow-y-auto animate-fade-in" onClick={() => setShowModal(false)}>
+          <div className="bg-white rounded-2xl w-full max-w-4xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden border border-border my-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-white shrink-0 sticky top-0 z-10">
               <h2 className="text-lg font-semibold">{editingCombo ? 'Edit Combo' : 'Create New Combo'}</h2>
               <button onClick={() => setShowModal(false)} className="p-1 hover:bg-surface rounded-lg"><X size={18} /></button>
             </div>

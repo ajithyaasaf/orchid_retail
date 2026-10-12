@@ -20,19 +20,31 @@ export default function AdminCustomersPage() {
   const [customers, setCustomers] = useState<CustomerData[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [pageSize, setPageSize] = useState(20);
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 });
   const [selected, setSelected] = useState<CustomerDetail | null>(null);
 
-  const fetchCustomers = useCallback(async (page = 1) => {
+  const fetchCustomers = useCallback(async (page = 1, limit = pageSize) => {
     setLoading(true);
     try {
-      const res = await adminApi.getCustomers({ search: search || undefined, page, limit: 20 }) as any;
-      setCustomers(res.data || []); setPagination(res.pagination || { page: 1, totalPages: 1, total: 0 });
+      const res = await adminApi.getCustomers({ search: search || undefined, page, limit }) as any;
+      setCustomers(res.data || []); 
+      const total = res.pagination?.total || 0;
+      setPagination(res.pagination || { page, limit, totalPages: Math.max(1, Math.ceil(total / limit)), total });
     } catch (e) { console.error(e); }
     setLoading(false);
-  }, [search]);
+  }, [search, pageSize]);
 
   useEffect(() => { fetchCustomers(); }, [fetchCustomers]);
+
+  useEffect(() => {
+    if (selected) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [selected]);
 
   const openDetail = async (id: string) => {
     try { const res = await adminApi.getCustomer(id) as any; setSelected(res.data); } catch (e) { console.error(e); }
@@ -85,10 +97,70 @@ export default function AdminCustomersPage() {
         </div>
       )}
 
+      {/* Pagination & Summary Bar */}
+      <div className="bg-white border border-border rounded-xl p-3.5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xs">
+        <div className="text-xs text-muted flex items-center gap-2">
+          <span>
+            Showing <strong className="text-foreground font-semibold">{pagination.total === 0 ? 0 : (pagination.page - 1) * pageSize + 1}</strong> to <strong className="text-foreground font-semibold">{Math.min(pagination.page * pageSize, pagination.total)}</strong> of <strong className="text-foreground font-semibold">{pagination.total}</strong> customers
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2 text-xs text-muted">
+          <span>Show:</span>
+          <select
+            value={pageSize}
+            onChange={e => {
+              const newSize = Number(e.target.value);
+              setPageSize(newSize);
+              fetchCustomers(1, newSize);
+            }}
+            className="px-2 py-1 bg-surface border border-border rounded-md text-xs font-medium text-foreground focus:outline-none focus:border-primary"
+          >
+            <option value={10}>10 per page</option>
+            <option value={20}>20 per page</option>
+            <option value={50}>50 per page</option>
+          </select>
+        </div>
+
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => { if (pagination.page > 1) fetchCustomers(pagination.page - 1, pageSize); }}
+            disabled={pagination.page <= 1}
+            className="px-2.5 py-1 text-xs font-medium rounded-lg border border-border bg-white hover:bg-surface disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            ← Prev
+          </button>
+
+          {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+            const pageNum = i + 1;
+            return (
+              <button
+                key={pageNum}
+                type="button"
+                onClick={() => fetchCustomers(pageNum, pageSize)}
+                className={cn('w-8 h-8 rounded-lg text-xs font-semibold transition-colors', pageNum === pagination.page ? 'bg-primary text-white shadow-xs' : 'bg-white border border-border hover:border-primary text-foreground')}
+              >
+                {pageNum}
+              </button>
+            );
+          })}
+
+          <button
+            type="button"
+            onClick={() => { if (pagination.page < pagination.totalPages) fetchCustomers(pagination.page + 1, pageSize); }}
+            disabled={pagination.page >= pagination.totalPages}
+            className="px-2.5 py-1 text-xs font-medium rounded-lg border border-border bg-white hover:bg-surface disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            Next →
+          </button>
+        </div>
+      </div>
+
       {/* Detail Modal */}
       {selected && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center pt-8 pb-8 overflow-y-auto bg-black/50" onClick={() => setSelected(null)}>
-          <div className="bg-white rounded-2xl w-full max-w-lg mx-4 shadow-2xl" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/60 backdrop-blur-xs overflow-y-auto animate-fade-in" onClick={() => setSelected(null)}>
+          <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl flex flex-col max-h-[90vh] overflow-hidden border border-border my-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between p-5 border-b border-border">
               <h2 className="text-lg font-semibold">{selected.name}</h2>
               <button onClick={() => setSelected(null)} className="p-1 hover:bg-surface rounded-lg"><X size={18} /></button>

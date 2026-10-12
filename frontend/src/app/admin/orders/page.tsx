@@ -28,21 +28,33 @@ export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<OrderData[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('');
+  const [pageSize, setPageSize] = useState(20);
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 });
   const [selectedOrder, setSelectedOrder] = useState<OrderData | null>(null);
   const [trackingForm, setTrackingForm] = useState({ trackingNumber: '', courierName: '' });
   const [updating, setUpdating] = useState(false);
 
-  const fetchOrders = useCallback(async (page = 1) => {
+  const fetchOrders = useCallback(async (page = 1, limit = pageSize) => {
     setLoading(true);
     try {
-      const res = await adminApi.getOrders({ status: statusFilter || undefined, limit: 20, page }) as any;
-      setOrders(res.data || []); setPagination(res.pagination || { page: 1, totalPages: 1, total: 0 });
+      const res = await adminApi.getOrders({ status: statusFilter || undefined, limit, page }) as any;
+      setOrders(res.data || []); 
+      const total = res.pagination?.total || 0;
+      setPagination(res.pagination || { page, limit, totalPages: Math.max(1, Math.ceil(total / limit)), total });
     } catch (e) { console.error(e); }
     setLoading(false);
-  }, [statusFilter]);
+  }, [statusFilter, pageSize]);
 
   useEffect(() => { fetchOrders(); }, [fetchOrders]);
+
+  useEffect(() => {
+    if (selectedOrder) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [selectedOrder]);
 
   const handleStatusUpdate = async (orderId: string, newStatus: string) => {
     setUpdating(true);
@@ -121,15 +133,65 @@ export default function AdminOrdersPage() {
         </div>
       )}
 
-      {pagination.totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2">
-          {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map(p => (
-            <button key={p} onClick={() => fetchOrders(p)} className={cn('w-8 h-8 rounded-lg text-xs font-medium', p === pagination.page ? 'bg-primary text-white' : 'bg-white border border-border hover:border-primary')}>
-              {p}
-            </button>
-          ))}
+      {/* Pagination & Summary Bar */}
+      <div className="bg-white border border-border rounded-xl p-3.5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xs">
+        <div className="text-xs text-muted flex items-center gap-2">
+          <span>
+            Showing <strong className="text-foreground font-semibold">{pagination.total === 0 ? 0 : (pagination.page - 1) * pageSize + 1}</strong> to <strong className="text-foreground font-semibold">{Math.min(pagination.page * pageSize, pagination.total)}</strong> of <strong className="text-foreground font-semibold">{pagination.total}</strong> orders
+          </span>
         </div>
-      )}
+
+        <div className="flex items-center gap-2 text-xs text-muted">
+          <span>Show:</span>
+          <select
+            value={pageSize}
+            onChange={e => {
+              const newSize = Number(e.target.value);
+              setPageSize(newSize);
+              fetchOrders(1, newSize);
+            }}
+            className="px-2 py-1 bg-surface border border-border rounded-md text-xs font-medium text-foreground focus:outline-none focus:border-primary"
+          >
+            <option value={10}>10 per page</option>
+            <option value={20}>20 per page</option>
+            <option value={50}>50 per page</option>
+          </select>
+        </div>
+
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => { if (pagination.page > 1) fetchOrders(pagination.page - 1, pageSize); }}
+            disabled={pagination.page <= 1}
+            className="px-2.5 py-1 text-xs font-medium rounded-lg border border-border bg-white hover:bg-surface disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            ← Prev
+          </button>
+
+          {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+            const pageNum = i + 1;
+            return (
+              <button
+                key={pageNum}
+                type="button"
+                onClick={() => fetchOrders(pageNum, pageSize)}
+                className={cn('w-8 h-8 rounded-lg text-xs font-semibold transition-colors', pageNum === pagination.page ? 'bg-primary text-white shadow-xs' : 'bg-white border border-border hover:border-primary text-foreground')}
+              >
+                {pageNum}
+              </button>
+            );
+          })}
+
+          <button
+            type="button"
+            onClick={() => { if (pagination.page < pagination.totalPages) fetchOrders(pagination.page + 1, pageSize); }}
+            disabled={pagination.page >= pagination.totalPages}
+            className="px-2.5 py-1 text-xs font-medium rounded-lg border border-border bg-white hover:bg-surface disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            Next →
+          </button>
+        </div>
+      </div>
 
       {/* Order Detail Drawer */}
       {selectedOrder && (
