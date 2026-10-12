@@ -39,7 +39,6 @@ async function fetchApi<T>(endpoint: string, options: FetchOptions = {}): Promis
 
   const response = await fetch(url, {
     headers: { 'Content-Type': 'application/json', ...authHeaders, ...fetchOptions.headers },
-    credentials: 'include',
     cache: 'no-store', // Ensure we always get fresh data
     ...fetchOptions,
   });
