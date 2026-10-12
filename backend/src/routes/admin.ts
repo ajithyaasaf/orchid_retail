@@ -66,8 +66,6 @@ router.get('/dashboard', async (_req: Request, res: Response) => {
 });
 
 // ─── Products CRUD ───────────────────────────────────────────────────────────
-router.use('/products', superAdminMiddleware);
-router.use('/variants', superAdminMiddleware); // Variants are part of product management
 
 router.get('/products', async (req: Request, res: Response) => {
   try {
