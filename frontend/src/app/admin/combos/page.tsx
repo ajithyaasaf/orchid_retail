@@ -85,7 +85,7 @@ export default function AdminCombosPage() {
 
   const openCreateModal = () => {
     setEditingCombo(null);
-    setForm({ name: '', slug: '', description: '', images: [''], price: 0, mrp: 0, isFeatured: false });
+    setForm({ name: '', slug: '', description: '', images: [''], price: '' as any, mrp: '' as any, isFeatured: false });
     setSelectedProductIds([]);
     setFormError('');
     setShowModal(true);
@@ -108,7 +108,7 @@ export default function AdminCombosPage() {
   };
 
   const handleSave = async () => {
-    if (!form.name || !form.price || selectedProductIds.length === 0) {
+    if (!form.name || !Number(form.price) || selectedProductIds.length === 0) {
       setFormError('Name, Price, and at least one product are required');
       return;
     }
@@ -118,6 +118,8 @@ export default function AdminCombosPage() {
     try {
       const data = {
         ...form,
+        price: Number(form.price) || 0,
+        mrp: Number(form.mrp) || 0,
         slug: form.slug || generateSlug(form.name),
         images: form.images.filter(Boolean),
         productIds: selectedProductIds,
@@ -260,8 +262,12 @@ export default function AdminCombosPage() {
                     <label className="text-xs font-medium text-muted mb-1 block">Bundle Price *</label>
                     <input 
                       type="number" 
-                      value={form.price} 
-                      onChange={e => setForm({ ...form, price: Number(e.target.value) })}
+                      min={0}
+                      step="any"
+                      placeholder="0"
+                      value={form.price === 0 ? 0 : (form.price || '')} 
+                      onFocus={e => e.target.select()}
+                      onChange={e => setForm({ ...form, price: e.target.value === '' ? ('' as any) : Number(e.target.value) })}
                       className="w-full px-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary font-bold text-primary" 
                     />
                   </div>
@@ -269,8 +275,12 @@ export default function AdminCombosPage() {
                     <label className="text-xs font-medium text-muted mb-1 block">Original MRP Sum</label>
                     <input 
                       type="number" 
-                      value={form.mrp} 
-                      onChange={e => setForm({ ...form, mrp: Number(e.target.value) })}
+                      min={0}
+                      step="any"
+                      placeholder="0"
+                      value={form.mrp === 0 ? 0 : (form.mrp || '')} 
+                      onFocus={e => e.target.select()}
+                      onChange={e => setForm({ ...form, mrp: e.target.value === '' ? ('' as any) : Number(e.target.value) })}
                       className="w-full px-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary line-through text-muted" 
                     />
                   </div>
