@@ -1,9 +1,8 @@
 import type { Metadata } from 'next';
 import { Inter, Playfair_Display } from 'next/font/google';
 import './globals.css';
-import Header from '@/components/layout/Header';
-import Footer from '@/components/layout/Footer';
-import CartDrawer from '@/components/layout/CartDrawer';
+import StoreShell from '@/components/layout/StoreShell';
+import { SHIPPING } from '@orchid/shared';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -16,8 +15,6 @@ const playfair = Playfair_Display({
   variable: '--font-playfair',
   display: 'swap',
 });
-
-import { SHIPPING } from '@orchid/shared';
 
 export const metadata: Metadata = {
   title: {
@@ -42,10 +39,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${playfair.variable}`} suppressHydrationWarning>
       <body className="min-h-screen flex flex-col font-sans antialiased" suppressHydrationWarning>
-        <Header />
-        <main className="flex-1">{children}</main>
-        <Footer />
-        <CartDrawer />
+        <StoreShell>{children}</StoreShell>
       </body>
     </html>
   );
