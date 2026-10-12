@@ -12,7 +12,8 @@ export interface AuthRequest extends Request {
 }
 
 export const authMiddleware = (req: AuthRequest, res: Response, next: NextFunction) => {
-  const token = req.cookies.token;
+  // Support both cookies and Bearer Authorization header for cross-origin resiliency
+  const token = req.cookies.token || req.headers.authorization?.replace(/^Bearer\s+/i, '');
 
   if (!token) {
     return res.status(401).json({ success: false, error: 'Unauthorized: No token provided' });
@@ -41,4 +42,3 @@ export const superAdminMiddleware = (req: AuthRequest, res: Response, next: Next
   }
   next();
 };
-

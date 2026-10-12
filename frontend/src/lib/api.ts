@@ -34,8 +34,11 @@ async function fetchApi<T>(endpoint: string, options: FetchOptions = {}): Promis
     if (qs) url += `?${qs}`;
   }
 
+  const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+  const authHeaders: Record<string, string> = token ? { Authorization: 'Bearer ' + token} : {};
+
   const response = await fetch(url, {
-    headers: { 'Content-Type': 'application/json', ...fetchOptions.headers },
+    headers: { 'Content-Type': 'application/json', ...authHeaders, ...fetchOptions.headers },
     credentials: 'include',
     cache: 'no-store', // Ensure we always get fresh data
     ...fetchOptions,

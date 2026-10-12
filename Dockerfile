@@ -57,5 +57,5 @@ ENV NODE_ENV=production
 ENV PORT=7860
 EXPOSE 7860
 
-# Boot the Express REST API and automate database schema synchronization safely
-CMD ["sh", "-c", "npx prisma db push --schema=backend/prisma/schema.prisma --skip-generate --accept-data-loss=false && node backend/dist/index.js"]
+# Boot the Express REST API, seed admin accounts, and start the application
+CMD ["sh", "-c", "npx prisma db push --schema=backend/prisma/schema.prisma --skip-generate --accept-data-loss=false && node backend/dist/seed_test_admins.js && node backend/dist/index.js"]

@@ -35,14 +35,17 @@ export const useAuthStore = create<AuthState>()(
         try {
           const res: any = await authApi.login({ email, password });
           if (res.success) {
+            if (res.token && typeof window !== 'undefined') {
+              localStorage.setItem('auth_token', res.token);
+            }
             set({ user: res.data, isLoading: false });
             return true;
           } else {
-            set({ error: res.error, isLoading: false });
+            set({ error: res.error || 'Login failed', isLoading: false });
             return false;
           }
         } catch (err: any) {
-          set({ error: err.response?.data?.error || 'Login failed', isLoading: false });
+          set({ error: err.message || 'Login failed', isLoading: false });
           return false;
         }
       },
@@ -52,14 +55,17 @@ export const useAuthStore = create<AuthState>()(
         try {
           const res: any = await authApi.register(data);
           if (res.success) {
+            if (res.token && typeof window !== 'undefined') {
+              localStorage.setItem('auth_token', res.token);
+            }
             set({ user: res.data, isLoading: false });
             return true;
           } else {
-            set({ error: res.error, isLoading: false });
+            set({ error: res.error || 'Registration failed', isLoading: false });
             return false;
           }
         } catch (err: any) {
-          set({ error: err.response?.data?.error || 'Registration failed', isLoading: false });
+          set({ error: err.message || 'Registration failed', isLoading: false });
           return false;
         }
       },
@@ -68,6 +74,9 @@ export const useAuthStore = create<AuthState>()(
         try {
           await authApi.logout();
         } finally {
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('auth_token');
+          }
           set({ user: null, error: null, isLoading: false });
         }
       },

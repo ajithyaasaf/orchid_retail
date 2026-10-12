@@ -9,7 +9,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'orchid_secret_key_2024';
 const COOKIE_OPTIONS = {
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
-  sameSite: 'lax' as const,
+  sameSite: process.env.NODE_ENV === 'production' ? ('none' as const) : ('lax' as const),
   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
 };
 
@@ -50,6 +50,7 @@ router.post('/register', async (req: Request, res: Response) => {
     res.status(201).json({
       success: true,
       data: { id: user.id, name: user.name, email: user.email, role: user.role },
+      token,
     });
   } catch (error) {
     console.error('Registration error:', error);
@@ -87,6 +88,7 @@ router.post('/login', async (req: Request, res: Response) => {
     res.json({
       success: true,
       data: { id: user.id, name: user.name, email: user.email, role: user.role },
+      token,
     });
   } catch (error) {
     console.error('Login error:', error);
@@ -96,7 +98,7 @@ router.post('/login', async (req: Request, res: Response) => {
 
 // ─── Logout ──────────────────────────────────────────────────────────────────
 router.post('/logout', (req: Request, res: Response) => {
-  res.clearCookie('token');
+  res.clearCookie('token', COOKIE_OPTIONS);
   res.json({ success: true, message: 'Logged out successfully' });
 });
 
