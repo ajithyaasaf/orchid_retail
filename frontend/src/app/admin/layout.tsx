@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/stores/authStore';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 const RETAIL_NAV = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
@@ -26,15 +26,17 @@ const RETAIL_NAV = [
   { href: '/admin/orders', label: 'Orders', icon: ShoppingCart },
   { href: '/admin/customers', label: 'Customers', icon: Users },
   { href: '/admin/categories', label: 'Categories', icon: FolderOpen },
-  { href: '/admin/combos', label: 'Combos', icon: Package },
-  { href: '/admin/collections', label: 'Collections', icon: Layers },
-  { href: '/admin/coupons', label: 'Coupons', icon: Tag },
+  { href: '/admin/combos', label: 'Combos', icon: Package, superOnly: true },
+  { href: '/admin/collections', label: 'Collections', icon: Layers, superOnly: true },
+  { href: '/admin/coupons', label: 'Coupons', icon: Tag, superOnly: true },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { user, isLoading, isInitialized, checkAuth } = useAuthStore();
   const [wholesaleAdminUrl, setWholesaleAdminUrl] = useState('http://localhost:3001/admin');
+  
+  const isSuper = user?.role === 'super_admin';
 
   useEffect(() => {
     checkAuth();
@@ -48,6 +50,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       }
     }
   }, []);
+
+  const filteredNav = useMemo(() => {
+    return RETAIL_NAV.filter(item => !item.superOnly || isSuper);
+  }, [isSuper]);
+
+  // Security Guard for superOnly pages (Combos, Collections, Coupons)
+  useEffect(() => {
+    if (user && !isSuper) {
+      const activeNav = RETAIL_NAV.find(item => pathname.startsWith(item.href));
+      if (activeNav?.superOnly) {
+        window.location.replace('/admin');
+      }
+    }
+  }, [user, isSuper, pathname]);
 
   // Require admin login
   useEffect(() => {
@@ -133,7 +149,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 B2C
               </span>
             </div>
-            {RETAIL_NAV.map(item => (
+            {filteredNav.map(item => (
               <Link
                 key={item.href}
                 href={item.href}
@@ -165,7 +181,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         {/* Mobile nav */}
         <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-lg border-t border-border flex justify-around px-2 safe-area-bottom">
-          {RETAIL_NAV.map(item => (
+          {filteredNav.map(item => (
             <Link
               key={item.href}
               href={item.href}
