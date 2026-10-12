@@ -20,17 +20,17 @@ import { useAuthStore } from '@/stores/authStore';
 export default function AdminWorkspacePortalPage() {
   const router = useRouter();
   const { user, logout, checkAuth } = useAuthStore();
-  const [wholesaleUrl, setWholesaleUrl] = useState('http://localhost:3001/admin');
+  const [wholesaleUrl, setWholesaleUrl] = useState('https://orchids-main-frontend.vercel.app/');
 
   useEffect(() => {
     checkAuth();
     if (typeof window !== 'undefined') {
-      const configured = process.env.NEXT_PUBLIC_WHOLESALE_ADMIN_URL;
+      const configured = process.env.NEXT_PUBLIC_WHOLESALE_URL || process.env.NEXT_PUBLIC_WHOLESALE_ADMIN_URL;
       if (configured) {
         setWholesaleUrl(configured);
       } else {
         const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-        setWholesaleUrl(isLocal ? 'http://localhost:3001/admin' : 'https://orchidhub.in/admin');
+        setWholesaleUrl(isLocal ? 'http://localhost:3001' : 'https://orchids-main-frontend.vercel.app/');
       }
     }
   }, []);
@@ -154,7 +154,7 @@ export default function AdminWorkspacePortalPage() {
 
               <div className="space-y-1 mb-4">
                 <h3 className="text-2xl font-bold tracking-tight text-white">Wholesale Hub</h3>
-                <p className="text-xs font-mono text-indigo-400 font-semibold">orchidhub.in</p>
+                <p className="text-xs font-mono text-indigo-400 font-semibold">orchids-main-frontend.vercel.app</p>
               </div>
 
               <p className="text-sm text-white/70 mb-6 leading-relaxed">
