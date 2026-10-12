@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Mail, Lock, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
@@ -9,20 +9,33 @@ import { useAuthStore } from '@/stores/authStore';
 function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { login, isLoading, error } = useAuthStore();
+  const { user, login, isLoading, error } = useAuthStore();
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirect') || '/';
+
+  // Automatically redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      if (user.role === 'admin' || user.role === 'super_admin') {
+        const dest = redirectTo && redirectTo !== '/' ? redirectTo : '/admin';
+        window.location.href = dest;
+      } else if (redirectTo !== '/login') {
+        window.location.href = redirectTo;
+      }
+    }
+  }, [user, redirectTo]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const success = await login(email, password);
     if (success) {
-      const user = useAuthStore.getState().user;
-      if (user && (user.role === 'admin' || user.role === 'super_admin') && (redirectTo === '/' || redirectTo === '/admin')) {
-        router.push('/admin/portal');
+      const currentUser = useAuthStore.getState().user;
+      if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'super_admin')) {
+        const dest = redirectTo && redirectTo !== '/' ? redirectTo : '/admin';
+        window.location.href = dest;
       } else {
-        router.push(redirectTo);
+        window.location.href = redirectTo;
       }
     }
   };
