@@ -71,7 +71,7 @@ export default function AdminDashboard() {
             All Workspaces
           </Link>
           <a
-            href={process.env.NEXT_PUBLIC_WHOLESALE_URL || process.env.NEXT_PUBLIC_WHOLESALE_ADMIN_URL || 'https://orchids-main-frontend.vercel.app/'}
+            href={process.env.NEXT_PUBLIC_WHOLESALE_URL || process.env.NEXT_PUBLIC_WHOLESALE_ADMIN_URL || 'https://orchids-main-frontend.vercel.app/admin'}
             target="_blank"
             rel="noopener noreferrer"
             className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold transition-all shadow flex items-center gap-2"

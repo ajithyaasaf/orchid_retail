@@ -20,7 +20,7 @@ import { useAuthStore } from '@/stores/authStore';
 export default function AdminWorkspacePortalPage() {
   const router = useRouter();
   const { user, logout, checkAuth } = useAuthStore();
-  const [wholesaleUrl, setWholesaleUrl] = useState('https://orchids-main-frontend.vercel.app/');
+  const [wholesaleUrl, setWholesaleUrl] = useState('https://orchids-main-frontend.vercel.app/admin');
 
   useEffect(() => {
     checkAuth();
@@ -30,7 +30,7 @@ export default function AdminWorkspacePortalPage() {
         setWholesaleUrl(configured);
       } else {
         const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-        setWholesaleUrl(isLocal ? 'http://localhost:3001' : 'https://orchids-main-frontend.vercel.app/');
+        setWholesaleUrl(isLocal ? 'http://localhost:3001/admin' : 'https://orchids-main-frontend.vercel.app/admin');
       }
     }
   }, []);

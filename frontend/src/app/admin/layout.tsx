@@ -36,7 +36,7 @@ const RETAIL_NAV = [
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { user, isLoading, isInitialized, checkAuth } = useAuthStore();
-  const [wholesaleAdminUrl, setWholesaleAdminUrl] = useState('https://orchids-main-frontend.vercel.app/');
+  const [wholesaleAdminUrl, setWholesaleAdminUrl] = useState('https://orchids-main-frontend.vercel.app/admin');
   const [mobileOpen, setMobileOpen] = useState(false);
   
   const isSuper = user?.role === 'super_admin';
@@ -49,7 +49,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         setWholesaleAdminUrl(configured);
       } else {
         const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-        setWholesaleAdminUrl(isLocal ? 'http://localhost:3001' : 'https://orchids-main-frontend.vercel.app/');
+        setWholesaleAdminUrl(isLocal ? 'http://localhost:3001/admin' : 'https://orchids-main-frontend.vercel.app/admin');
       }
     }
   }, [checkAuth]);
