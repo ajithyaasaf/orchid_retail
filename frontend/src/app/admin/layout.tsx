@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { 
   LayoutDashboard, 
   Package, 
@@ -33,7 +33,6 @@ const RETAIL_NAV = [
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const router = useRouter();
   const { user, isLoading, isInitialized, checkAuth } = useAuthStore();
   const [wholesaleAdminUrl, setWholesaleAdminUrl] = useState('http://localhost:3001/admin');
   
@@ -61,21 +60,21 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     if (user && !isSuper) {
       const activeNav = RETAIL_NAV.find(item => pathname.startsWith(item.href));
       if (activeNav?.superOnly) {
-        router.replace('/admin');
+        window.location.replace('/admin');
       }
     }
-  }, [user, isSuper, pathname, router]);
+  }, [user, isSuper, pathname]);
 
   // Require admin login
   useEffect(() => {
     if (isInitialized && !isLoading) {
       if (!user) {
-        router.replace('/login?redirect=' + encodeURIComponent(pathname || '/admin'));
+        window.location.replace('/login?redirect=' + encodeURIComponent(pathname || '/admin'));
       } else if (user.role !== 'admin' && user.role !== 'super_admin') {
-        router.replace('/');
+        window.location.replace('/');
       }
     }
-  }, [user, isLoading, isInitialized, pathname, router]);
+  }, [user, isLoading, isInitialized, pathname]);
 
   const isActive = (href: string) => {
     if (href === '/admin') return pathname === '/admin';

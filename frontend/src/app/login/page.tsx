@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect, useRef, Suspense } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
 import { Mail, Lock, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
+import { useSearchParams } from 'next/navigation';
 
 function LoginForm() {
   const [email, setEmail] = useState('');
@@ -13,24 +13,20 @@ function LoginForm() {
   const [localError, setLocalError] = useState<string | null>(null);
 
   const { user, login, isInitialized, error } = useAuthStore();
-  const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirect') || '/';
-  const hasRedirected = useRef(false);
 
-  // Automatically redirect if already logged in
+  // Automatically redirect if already logged in as admin
   useEffect(() => {
-    if (isInitialized && user && !hasRedirected.current) {
-      hasRedirected.current = true;
+    if (isInitialized && user) {
       if (user.role === 'admin' || user.role === 'super_admin') {
         const dest = redirectTo && redirectTo !== '/' && redirectTo !== '/login' ? redirectTo : '/admin';
-        router.replace(dest);
-      } else {
-        const dest = redirectTo && redirectTo !== '/login' ? redirectTo : '/';
-        router.replace(dest);
+        window.location.replace(dest);
+      } else if (redirectTo && redirectTo !== '/login' && redirectTo !== '/') {
+        window.location.replace(redirectTo);
       }
     }
-  }, [user, isInitialized, redirectTo, router]);
+  }, [user, isInitialized, redirectTo]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,19 +37,19 @@ function LoginForm() {
     try {
       const success = await login(email, password);
       if (success) {
-        hasRedirected.current = true;
         const currentUser = useAuthStore.getState().user;
         if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'super_admin')) {
           const dest = redirectTo && redirectTo !== '/' && redirectTo !== '/login' ? redirectTo : '/admin';
-          router.replace(dest);
+          window.location.replace(dest);
         } else {
           const dest = redirectTo && redirectTo !== '/login' ? redirectTo : '/';
-          router.replace(dest);
+          window.location.replace(dest);
         }
+      } else {
+        setIsSubmitting(false);
       }
     } catch (err: any) {
       setLocalError(err.message || 'Login failed');
-    } finally {
       setIsSubmitting(false);
     }
   };
@@ -66,7 +62,7 @@ function LoginForm() {
         <h2 className="text-xl font-bold text-gray-900 mb-1" style={{ fontFamily: 'var(--font-playfair)' }}>
           Welcome back, {user.name?.split(' ')[0] || 'Admin'}
         </h2>
-        <p className="text-gray-500 text-sm">Redirecting to Orchid Console...</p>
+        <p className="text-gray-500 text-sm">Entering Orchid Console...</p>
       </div>
     );
   }
