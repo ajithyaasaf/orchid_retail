@@ -21,13 +21,13 @@ function LoginForm() {
   // Automatically redirect if already logged in
   useEffect(() => {
     if (isInitialized && user && !hasRedirected.current) {
+      hasRedirected.current = true;
       if (user.role === 'admin' || user.role === 'super_admin') {
-        hasRedirected.current = true;
         const dest = redirectTo && redirectTo !== '/' && redirectTo !== '/login' ? redirectTo : '/admin';
         router.replace(dest);
-      } else if (redirectTo && redirectTo !== '/login' && redirectTo !== '/') {
-        hasRedirected.current = true;
-        router.replace(redirectTo);
+      } else {
+        const dest = redirectTo && redirectTo !== '/login' ? redirectTo : '/';
+        router.replace(dest);
       }
     }
   }, [user, isInitialized, redirectTo, router]);
@@ -58,7 +58,7 @@ function LoginForm() {
     }
   };
 
-  // If already authenticated as an admin, show a clean transition state rather than a flashing form
+  // If already authenticated as an admin, show clean transition card
   if (isInitialized && user && (user.role === 'admin' || user.role === 'super_admin')) {
     return (
       <div className="w-full max-w-md bg-white rounded-3xl p-8 md:p-10 text-center shadow-xl shadow-gray-100 border border-gray-100">

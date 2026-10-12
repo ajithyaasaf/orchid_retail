@@ -1,6 +1,8 @@
+import { getStoredToken } from '@/lib/authSession';
+
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
-// ─── Shared Types ─────────────────────────────────────────────────────────────
+// ─── Shared Types ────────────────────────────────────────────────────────────
 export interface AddressData {
   id: string;
   userId: string;
@@ -34,8 +36,8 @@ async function fetchApi<T>(endpoint: string, options: FetchOptions = {}): Promis
     if (qs) url += `?${qs}`;
   }
 
-  const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
-  const authHeaders: Record<string, string> = token ? { Authorization: 'Bearer ' + token} : {};
+  const token = getStoredToken();
+  const authHeaders: Record<string, string> = token ? { Authorization: 'Bearer ' + token } : {};
 
   const response = await fetch(url, {
     headers: { 'Content-Type': 'application/json', ...authHeaders, ...fetchOptions.headers },
@@ -102,7 +104,7 @@ export const orderApi = {
     fetchApi(`/orders/user/${encodeURIComponent(userId)}${guestId ? `?guestId=${encodeURIComponent(guestId)}` : ''}`),
 };
 
-// ─── Address APIs ─────────────────────────────────────────────────────────────
+// ─── Address APIs ────────────────────────────────────────────────────────────
 export const addressApi = {
   list: (userId: string, guestId?: string | null) =>
     fetchApi<{ success: boolean; data: AddressData[] }>(
@@ -129,7 +131,7 @@ export const paymentApi = {
   getKey: () => fetchApi<{ success: boolean; data: { keyId: string } }>('/payments/key'),
 };
 
-// ─── Coupon APIs ──────────────────────────────────────────────────────────────
+// ─── Coupon APIs ─────────────────────────────────────────────────────────────
 export const couponApi = {
   validate: (code: string, userId: string, subtotal: number) =>
     fetchApi<{ success: boolean; data: { code: string; type: string; value: number; discount: number; maxDiscount?: number; minOrder?: number } }>(

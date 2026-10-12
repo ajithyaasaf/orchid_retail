@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { authApi } from '@/lib/api';
+import { setAuthSession, clearAuthSession, getStoredToken } from '@/lib/authSession';
 
 interface User {
   id: string;
@@ -39,8 +40,8 @@ export const useAuthStore = create<AuthState>()(
         try {
           const res: any = await authApi.login({ email, password });
           if (res.success) {
-            if (res.token && typeof window !== 'undefined') {
-              localStorage.setItem('auth_token', res.token);
+            if (res.token) {
+              setAuthSession(res.token);
             }
             set({ user: res.data, isLoading: false, isInitialized: true, error: null });
             return true;
@@ -59,8 +60,8 @@ export const useAuthStore = create<AuthState>()(
         try {
           const res: any = await authApi.register(data);
           if (res.success) {
-            if (res.token && typeof window !== 'undefined') {
-              localStorage.setItem('auth_token', res.token);
+            if (res.token) {
+              setAuthSession(res.token);
             }
             set({ user: res.data, isLoading: false, isInitialized: true, error: null });
             return true;
@@ -78,9 +79,7 @@ export const useAuthStore = create<AuthState>()(
         try {
           await authApi.logout();
         } finally {
-          if (typeof window !== 'undefined') {
-            localStorage.removeItem('auth_token');
-          }
+          clearAuthSession();
           set({ user: null, error: null, isLoading: false, isInitialized: true });
         }
       },
@@ -90,19 +89,19 @@ export const useAuthStore = create<AuthState>()(
 
         checkAuthPromise = (async () => {
           try {
-            const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+            const token = getStoredToken();
             if (!token) {
+              clearAuthSession();
               set({ user: null, isInitialized: true, isLoading: false });
               return;
             }
 
             const res: any = await authApi.me();
             if (res.success && res.data) {
+              setAuthSession(token);
               set({ user: res.data, isInitialized: true, isLoading: false, error: null });
             } else {
-              if (typeof window !== 'undefined') {
-                localStorage.removeItem('auth_token');
-              }
+              clearAuthSession();
               set({ user: null, isInitialized: true, isLoading: false });
             }
           } catch (err: any) {
@@ -110,9 +109,7 @@ export const useAuthStore = create<AuthState>()(
               err?.message &&
               (err.message.includes('401') || err.message.includes('403') || err.message.includes('Unauthorized'));
             if (isUnauthorized) {
-              if (typeof window !== 'undefined') {
-                localStorage.removeItem('auth_token');
-              }
+              clearAuthSession();
               set({ user: null, isInitialized: true, isLoading: false });
             } else {
               set({ isInitialized: true, isLoading: false });
