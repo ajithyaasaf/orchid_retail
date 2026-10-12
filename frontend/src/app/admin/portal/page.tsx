@@ -33,7 +33,7 @@ export default function AdminWorkspacePortalPage() {
         setWholesaleUrl(isLocal ? 'http://localhost:3001/admin' : 'https://orchidhub.in/admin');
       }
     }
-  }, [checkAuth]);
+  }, []);
 
   const handleLogout = async () => {
     await logout();

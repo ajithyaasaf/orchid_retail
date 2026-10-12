@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Mail, Lock, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
@@ -9,36 +9,69 @@ import { useAuthStore } from '@/stores/authStore';
 function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { user, login, isLoading, error } = useAuthStore();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
+
+  const { user, login, isInitialized, error } = useAuthStore();
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirect') || '/';
+  const hasRedirected = useRef(false);
 
   // Automatically redirect if already logged in
   useEffect(() => {
-    if (user) {
+    if (isInitialized && user && !hasRedirected.current) {
       if (user.role === 'admin' || user.role === 'super_admin') {
-        const dest = redirectTo && redirectTo !== '/' ? redirectTo : '/admin';
-        window.location.href = dest;
-      } else if (redirectTo !== '/login') {
-        window.location.href = redirectTo;
+        hasRedirected.current = true;
+        const dest = redirectTo && redirectTo !== '/' && redirectTo !== '/login' ? redirectTo : '/admin';
+        router.replace(dest);
+      } else if (redirectTo && redirectTo !== '/login' && redirectTo !== '/') {
+        hasRedirected.current = true;
+        router.replace(redirectTo);
       }
     }
-  }, [user, redirectTo]);
+  }, [user, isInitialized, redirectTo, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const success = await login(email, password);
-    if (success) {
-      const currentUser = useAuthStore.getState().user;
-      if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'super_admin')) {
-        const dest = redirectTo && redirectTo !== '/' ? redirectTo : '/admin';
-        window.location.href = dest;
-      } else {
-        window.location.href = redirectTo;
+    if (isSubmitting) return;
+
+    setLocalError(null);
+    setIsSubmitting(true);
+    try {
+      const success = await login(email, password);
+      if (success) {
+        hasRedirected.current = true;
+        const currentUser = useAuthStore.getState().user;
+        if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'super_admin')) {
+          const dest = redirectTo && redirectTo !== '/' && redirectTo !== '/login' ? redirectTo : '/admin';
+          router.replace(dest);
+        } else {
+          const dest = redirectTo && redirectTo !== '/login' ? redirectTo : '/';
+          router.replace(dest);
+        }
       }
+    } catch (err: any) {
+      setLocalError(err.message || 'Login failed');
+    } finally {
+      setIsSubmitting(false);
     }
   };
+
+  // If already authenticated as an admin, show a clean transition state rather than a flashing form
+  if (isInitialized && user && (user.role === 'admin' || user.role === 'super_admin')) {
+    return (
+      <div className="w-full max-w-md bg-white rounded-3xl p-8 md:p-10 text-center shadow-xl shadow-gray-100 border border-gray-100">
+        <Loader2 className="animate-spin text-primary mx-auto mb-4" size={36} />
+        <h2 className="text-xl font-bold text-gray-900 mb-1" style={{ fontFamily: 'var(--font-playfair)' }}>
+          Welcome back, {user.name?.split(' ')[0] || 'Admin'}
+        </h2>
+        <p className="text-gray-500 text-sm">Redirecting to Orchid Console...</p>
+      </div>
+    );
+  }
+
+  const displayError = localError || error;
 
   return (
     <div className="w-full max-w-md">
@@ -52,10 +85,10 @@ function LoginForm() {
             <p className="text-gray-500 text-sm">Please enter your details to sign in</p>
           </div>
 
-          {error && (
+          {displayError && (
             <div className="mb-6 p-4 bg-red-50 rounded-2xl flex items-start gap-3 text-red-600 text-sm animate-shake">
               <AlertCircle size={18} className="shrink-0 mt-0.5" />
-              <p>{error}</p>
+              <p>{displayError}</p>
             </div>
           )}
 
@@ -105,10 +138,10 @@ function LoginForm() {
 
             <button
               type="submit"
-              disabled={isLoading}
-              className="w-full py-4 bg-primary text-white rounded-2xl font-bold text-sm shadow-lg shadow-primary/20 hover:bg-primary-dark hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center justify-center gap-2"
+              disabled={isSubmitting}
+              className="w-full py-4 bg-primary text-white rounded-2xl font-bold text-sm shadow-lg shadow-primary/20 hover:bg-primary-dark hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:hover:translate-y-0"
             >
-              {isLoading ? (
+              {isSubmitting ? (
                 <Loader2 size={20} className="animate-spin" />
               ) : (
                 <>

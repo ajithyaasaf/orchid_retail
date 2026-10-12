@@ -34,7 +34,7 @@ const RETAIL_NAV = [
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, isLoading, checkAuth } = useAuthStore();
+  const { user, isLoading, isInitialized, checkAuth } = useAuthStore();
   const [wholesaleAdminUrl, setWholesaleAdminUrl] = useState('http://localhost:3001/admin');
   
   const isSuper = user?.role === 'super_admin';
@@ -50,7 +50,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         setWholesaleAdminUrl(isLocal ? 'http://localhost:3001/admin' : 'https://orchidhub.in/admin');
       }
     }
-  }, [checkAuth]);
+  }, []);
 
   const filteredNav = useMemo(() => {
     return RETAIL_NAV.filter(item => !item.superOnly || isSuper);
@@ -64,20 +64,25 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         router.replace('/admin');
       }
     }
-  }, [pathname, isSuper, user, router]);
+  }, [user, isSuper, pathname, router]);
+
+  // Require admin login
+  useEffect(() => {
+    if (isInitialized && !isLoading) {
+      if (!user) {
+        router.replace('/login?redirect=' + encodeURIComponent(pathname || '/admin'));
+      } else if (user.role !== 'admin' && user.role !== 'super_admin') {
+        router.replace('/');
+      }
+    }
+  }, [user, isLoading, isInitialized, pathname, router]);
 
   const isActive = (href: string) => {
     if (href === '/admin') return pathname === '/admin';
     return pathname.startsWith(href);
   };
-  
-  useEffect(() => {
-    if (!isLoading && !user) {
-      router.push('/login?redirect=/admin');
-    }
-  }, [user, isLoading, router]);
 
-  if (isLoading || !user) {
+  if (!isInitialized || isLoading || !user || (user.role !== 'admin' && user.role !== 'super_admin')) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-surface">
         <div className="flex flex-col items-center gap-4">
