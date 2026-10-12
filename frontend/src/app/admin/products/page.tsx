@@ -5,21 +5,51 @@ import { adminApi } from '@/lib/api';
 import { formatPrice, cn, generateSlug } from '@/lib/utils';
 import { Plus, Edit, Trash2, Package, Search, X, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
 import ImageUpload from '@/components/admin/ImageUpload';
+import CategorySelect, { CategoryItem } from '@/components/admin/CategorySelect';
 
-interface VariantData { id?: string; sku: string; size: string; color: string; colorHex?: string; price: number; mrp: number; stock: number; imageIndex?: number; isActive?: boolean; }
+interface VariantData { 
+  id?: string; 
+  sku: string; 
+  size: string; 
+  color: string; 
+  colorHex?: string; 
+  price: number; 
+  mrp: number; 
+  stock: number; 
+  imageIndex?: number; 
+  isActive?: boolean; 
+}
+
 interface ProductData {
-  id: string; name: string; slug: string; description: string; images: string[];
-  isActive: boolean; isFeatured: boolean; exportBadge: boolean; freeShipping: boolean; tags: string[];
-  categoryId: string; category?: { name: string; slug: string };
+  id: string; 
+  name: string; 
+  slug: string; 
+  description: string; 
+  images: string[];
+  isActive: boolean; 
+  isFeatured: boolean; 
+  exportBadge: boolean; 
+  freeShipping: boolean; 
+  tags: string[];
+  categoryId: string; 
+  category?: { name: string; slug: string };
   variants: VariantData[];
 }
-interface CategoryOption { id: string; name: string; slug: string; children?: CategoryOption[] }
 
-const EMPTY_VARIANT: VariantData = { sku: '', size: '', color: '', colorHex: '', price: 0, mrp: 0, stock: 0, imageIndex: 0 };
+const EMPTY_VARIANT: VariantData = { 
+  sku: '', 
+  size: '', 
+  color: '', 
+  colorHex: '', 
+  price: 0, 
+  mrp: 0, 
+  stock: 0, 
+  imageIndex: 0 
+};
 
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<ProductData[]>([]);
-  const [categories, setCategories] = useState<CategoryOption[]>([]);
+  const [categories, setCategories] = useState<CategoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [expandedProduct, setExpandedProduct] = useState<string | null>(null);
@@ -29,7 +59,17 @@ export default function AdminProductsPage() {
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 });
 
   // Form state
-  const [form, setForm] = useState({ name: '', slug: '', description: '', categoryId: '', images: [] as string[], tags: '', exportBadge: false, isFeatured: false, freeShipping: false });
+  const [form, setForm] = useState({ 
+    name: '', 
+    slug: '', 
+    description: '', 
+    categoryId: '', 
+    images: [] as string[], 
+    tags: '', 
+    exportBadge: false, 
+    isFeatured: false, 
+    freeShipping: false 
+  });
   const [variants, setVariants] = useState<VariantData[]>([{ ...EMPTY_VARIANT }]);
   const [formError, setFormError] = useState('');
 
@@ -37,57 +77,85 @@ export default function AdminProductsPage() {
     setLoading(true);
     try {
       const res = await adminApi.getProducts({ search: search || undefined, page, limit: 20 }) as any;
-      setProducts(res.data || []); setPagination(res.pagination || { page: 1, totalPages: 1, total: 0 });
-    } catch (e) { console.error(e); }
+      setProducts(res.data || []); 
+      setPagination(res.pagination || { page: 1, totalPages: 1, total: 0 });
+    } catch (e) { 
+      console.error(e); 
+    }
     setLoading(false);
   }, [search]);
 
-  useEffect(() => { fetchProducts(); }, [fetchProducts]);
+  useEffect(() => { 
+    fetchProducts(); 
+  }, [fetchProducts]);
+
   useEffect(() => {
     adminApi.getCategories().then((res: any) => {
-      const hierarchy: CategoryOption[] = [];
-      (res.data || []).forEach((parent: any) => {
-        // Add parent
-        hierarchy.push(parent);
-        // Add children with a prefix for visual hierarchy
-        (parent.children || []).forEach((child: any) => {
-          hierarchy.push({
-            ...child,
-            name: `${parent.name} > ${child.name}`
-          });
-        });
-      });
-      setCategories(hierarchy);
+      setCategories(res.data || []);
     }).catch(console.error);
   }, []);
 
   const openCreateModal = () => {
     setEditingProduct(null);
-    setForm({ name: '', slug: '', description: '', categoryId: '', images: [] as string[], tags: '', exportBadge: false, isFeatured: false, freeShipping: false });
+    setForm({ 
+      name: '', 
+      slug: '', 
+      description: '', 
+      categoryId: '', 
+      images: [] as string[], 
+      tags: '', 
+      exportBadge: false, 
+      isFeatured: false, 
+      freeShipping: false 
+    });
     setVariants([{ ...EMPTY_VARIANT }]);
-    setFormError(''); setShowModal(true);
+    setFormError(''); 
+    setShowModal(true);
   };
 
   const openEditModal = (p: ProductData) => {
     setEditingProduct(p);
-    setForm({ name: p.name, slug: p.slug, description: p.description, categoryId: p.categoryId, images: p.images.length ? p.images : [] as string[], tags: p.tags.join(', '), exportBadge: p.exportBadge, isFeatured: p.isFeatured, freeShipping: !!p.freeShipping });
+    setForm({ 
+      name: p.name, 
+      slug: p.slug, 
+      description: p.description, 
+      categoryId: p.categoryId, 
+      images: p.images.length ? p.images : [] as string[], 
+      tags: p.tags.join(', '), 
+      exportBadge: p.exportBadge, 
+      isFeatured: p.isFeatured, 
+      freeShipping: !!p.freeShipping 
+    });
     setVariants(p.variants.map(v => ({ ...v })));
-    setFormError(''); setShowModal(true);
+    setFormError(''); 
+    setShowModal(true);
   };
 
   const handleSave = async () => {
-    if (!form.name || !form.categoryId) { setFormError('Name and category are required'); return; }
+    if (!form.name || !form.categoryId) { 
+      setFormError('Product name and category are required.'); 
+      return; 
+    }
     const validVariants = variants.filter(v => v.size && v.color && v.price > 0);
-    if (validVariants.length === 0) { setFormError('At least one valid variant is required'); return; }
+    if (validVariants.length === 0) { 
+      setFormError('At least one valid variant with size, color, and price is required.'); 
+      return; 
+    }
 
-    setSaving(true); setFormError('');
+    setSaving(true); 
+    setFormError('');
     try {
       const slug = form.slug || generateSlug(form.name);
       console.log('[Admin] Saving product with variants:', variants);
       const data = {
-        name: form.name, slug, description: form.description, categoryId: form.categoryId,
-        images: form.images.filter(Boolean), tags: form.tags.split(',').map(t => t.trim()).filter(Boolean),
-        exportBadge: form.exportBadge, isFeatured: form.isFeatured,
+        name: form.name, 
+        slug, 
+        description: form.description, 
+        categoryId: form.categoryId,
+        images: form.images.filter(Boolean), 
+        tags: form.tags.split(',').map(t => t.trim()).filter(Boolean),
+        exportBadge: form.exportBadge, 
+        isFeatured: form.isFeatured,
         variants: validVariants.map(v => ({
           id: v.id,
           sku: v.sku || `${slug}-${v.size}-${v.color}`.toLowerCase().replace(/\s+/g, '-'),
@@ -100,23 +168,39 @@ export default function AdminProductsPage() {
           imageIndex: Number(v.imageIndex || 0)
         })),
       };
-      if (editingProduct) { await adminApi.updateProduct(editingProduct.id, data); }
-      else { await adminApi.createProduct(data); }
-      setShowModal(false); fetchProducts(pagination.page);
-    } catch (e: any) { setFormError(e.message || 'Failed to save'); }
+      if (editingProduct) { 
+        await adminApi.updateProduct(editingProduct.id, data); 
+      } else { 
+        await adminApi.createProduct(data); 
+      }
+      setShowModal(false); 
+      fetchProducts(pagination.page);
+    } catch (e: any) { 
+      setFormError(e.message || 'Failed to save product'); 
+    }
     setSaving(false);
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm('Deactivate this product?')) return;
-    try { await adminApi.deleteProduct(id); fetchProducts(pagination.page); } catch (e: any) { alert(e.message); }
+    try { 
+      await adminApi.deleteProduct(id); 
+      fetchProducts(pagination.page); 
+    } catch (e: any) { 
+      alert(e.message); 
+    }
   };
 
   const handleUpdateStock = async (variantId: string, stock: number) => {
     try {
       await adminApi.updateVariant(variantId, { stock });
-      setProducts(prev => prev.map(p => ({ ...p, variants: p.variants.map(v => v.id === variantId ? { ...v, stock } : v) })));
-    } catch (e) { console.error('Failed to update stock:', e); }
+      setProducts(prev => prev.map(p => ({ 
+        ...p, 
+        variants: p.variants.map(v => v.id === variantId ? { ...v, stock } : v) 
+      })));
+    } catch (e) { 
+      console.error('Failed to update stock:', e); 
+    }
   };
 
   return (
@@ -173,7 +257,15 @@ export default function AdminProductsPage() {
                               <p className="text-xs text-muted">{product.variants.length} variants</p>
                             </div>
                           </div>
-                          <div className="px-4 py-3 hidden md:block text-muted">{product.category?.name || '—'}</div>
+                          <div className="px-4 py-3 hidden md:block">
+                            {product.category?.name ? (
+                              <span className="px-2 py-0.5 rounded-md bg-gray-100 text-gray-700 font-medium text-[11px]">
+                                {product.category.name}
+                              </span>
+                            ) : (
+                              <span className="text-muted">—</span>
+                            )}
+                          </div>
                           <div className="px-4 py-3 text-right font-medium">{formatPrice(minPrice)}</div>
                           <div className="px-4 py-3 text-right">
                             <span className={cn('font-medium', totalStock <= 5 ? 'text-error' : totalStock <= 20 ? 'text-warning' : 'text-success')}>{totalStock}</span>
@@ -258,13 +350,19 @@ export default function AdminProductsPage() {
                   className="w-full px-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary resize-none" />
               </div>
 
+              {/* Modern Category Selection */}
               <div>
-                <label className="text-xs font-medium text-muted mb-1 block">Category *</label>
-                <select value={form.categoryId} onChange={e => setForm({ ...form, categoryId: e.target.value })}
-                  className="w-full px-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary bg-white">
-                  <option value="">Select category</option>
-                  {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
+                <label className="text-xs font-medium text-muted mb-1.5 flex items-center justify-between">
+                  <span>Category *</span>
+                  <span className="text-[11px] text-muted">Department or Subcategory</span>
+                </label>
+                <CategorySelect
+                  categories={categories}
+                  value={form.categoryId}
+                  onChange={(catId) => setForm({ ...form, categoryId: catId })}
+                  hasError={!!formError && !form.categoryId}
+                  placeholder="Select or search category (e.g. Frocks, T-Shirts, Newborn)..."
+                />
               </div>
 
               <div>
@@ -277,7 +375,8 @@ export default function AdminProductsPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div><label className="text-xs font-medium text-muted mb-1 block">Tags (comma-separated)</label>
+                <div>
+                  <label className="text-xs font-medium text-muted mb-1 block">Tags (comma-separated)</label>
                   <input value={form.tags} onChange={e => setForm({ ...form, tags: e.target.value })} className="w-full px-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary" />
                 </div>
                 <div className="flex items-end gap-4 pb-1">
@@ -304,7 +403,7 @@ export default function AdminProductsPage() {
                       <div><label className="text-[10px] text-muted block mb-0.5">Price</label><input type="number" value={v.price} onChange={e => { const vv = [...variants]; vv[i] = { ...vv[i], price: Number(e.target.value) }; setVariants(vv); }} className="w-full px-2 py-1.5 border border-border rounded text-xs focus:outline-none focus:border-primary" /></div>
                       <div><label className="text-[10px] text-muted block mb-0.5">MRP</label><input type="number" value={v.mrp} onChange={e => { const vv = [...variants]; vv[i] = { ...vv[i], mrp: Number(e.target.value) }; setVariants(vv); }} className="w-full px-2 py-1.5 border border-border rounded text-xs focus:outline-none focus:border-primary" /></div>
                       <div><label className="text-[10px] text-muted block mb-0.5">Stock</label><input type="number" value={v.stock} onChange={e => { const vv = [...variants]; vv[i] = { ...vv[i], stock: Number(e.target.value) }; setVariants(vv); }} className="w-full px-2 py-1.5 border border-border rounded text-xs focus:outline-none focus:border-primary" /></div>
-                      <div><label className="text-[10px] text-muted block mb-0.5 font-bold text-primary">Img #</label><input type="number" min={1} max={6} value={(v.imageIndex || 0) + 1} onChange={e => { const vv = [...variants]; const val = Math.max(0, Number(e.target.value) - 1); console.log(`Changing variant ${i} imageIndex to ${val}`); vv[i] = { ...vv[i], imageIndex: val }; setVariants(vv); }} className="w-full px-2 py-1.5 border-2 border-primary/20 rounded text-xs font-bold focus:outline-none focus:border-primary bg-primary/5" /></div>
+                      <div><label className="text-[10px] text-muted block mb-0.5 font-bold text-primary">Img #</label><input type="number" min={1} max={6} value={(v.imageIndex || 0) + 1} onChange={e => { const vv = [...variants]; const val = Math.max(0, Number(e.target.value) - 1); vv[i] = { ...vv[i], imageIndex: val }; setVariants(vv); }} className="w-full px-2 py-1.5 border-2 border-primary/20 rounded text-xs font-bold focus:outline-none focus:border-primary bg-primary/5" /></div>
                       <div>{variants.length > 1 && <button onClick={() => setVariants(variants.filter((_, j) => j !== i))} className="p-1.5 text-error hover:bg-error/10 rounded"><X size={12} /></button>}</div>
                     </div>
                   ))}
