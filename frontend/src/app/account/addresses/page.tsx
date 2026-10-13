@@ -32,6 +32,34 @@ export default function AddressesPage() {
     city: '', state: 'Tamil Nadu', pincode: '', isDefault: false
   });
 
+  // Restore draft on mount if exists
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const savedDraft = localStorage.getItem('orchid_account_address_draft');
+        if (savedDraft) {
+          const parsed = JSON.parse(savedDraft);
+          if (parsed && typeof parsed === 'object') {
+            setForm(prev => ({ ...prev, ...parsed }));
+            setShowForm(true);
+          }
+        }
+      } catch (e) {}
+    }
+  }, []);
+
+  // Auto-save draft when adding a new address
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !editingId && showForm) {
+      try {
+        const hasData = Boolean(form.name || form.phone || form.addressLine1 || form.city || form.pincode);
+        if (hasData) {
+          localStorage.setItem('orchid_account_address_draft', JSON.stringify(form));
+        }
+      } catch (e) {}
+    }
+  }, [form, editingId, showForm]);
+
   const fetchAddresses = async () => {
     if (!activeUserId) return;
     try {
@@ -51,6 +79,7 @@ export default function AddressesPage() {
 
   const handleAddNew = () => {
     setForm({ name: '', phone: '', addressLine1: '', addressLine2: '', city: '', state: 'Tamil Nadu', pincode: '', isDefault: false });
+    try { localStorage.removeItem('orchid_account_address_draft'); } catch(e) {}
     setEditingId(null);
     setShowForm(true);
   };
@@ -112,6 +141,7 @@ export default function AddressesPage() {
         await addressApi.create({ ...form, userId: activeUserId });
       }
       setShowForm(false);
+      try { localStorage.removeItem('orchid_account_address_draft'); } catch(e) {}
       await fetchAddresses();
     } catch (err: any) {
       alert(err.message || 'Failed to save address');
@@ -169,7 +199,10 @@ export default function AddressesPage() {
               <label htmlFor="isDefault" className="text-sm font-medium">Set as default shipping address</label>
             </div>
             <div className="md:col-span-2 flex gap-3 mt-4 pt-4 border-t border-border">
-              <button type="button" onClick={() => setShowForm(false)} className="px-6 py-3 border border-border rounded-full font-medium">Cancel</button>
+              <button type="button" onClick={() => {
+                setShowForm(false);
+                try { localStorage.removeItem('orchid_account_address_draft'); } catch(e) {}
+              }} className="px-6 py-3 border border-border rounded-full font-medium">Cancel</button>
               <button type="submit" disabled={!isFormValid() || isSubmitting} className={cn('px-6 py-3 rounded-full font-semibold transition-colors flex items-center gap-2', isFormValid() ? 'bg-primary text-white' : 'bg-gray-200 text-gray-400')}>
                 {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />} {isSubmitting ? 'Saving...' : 'Save Address'}
               </button>

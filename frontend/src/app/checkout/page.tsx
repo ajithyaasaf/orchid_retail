@@ -59,6 +59,7 @@ export default function CheckoutPage() {
   const [savedAddresses, setSavedAddresses] = useState<AddressData[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [showAddressForm, setShowAddressForm] = useState(false);
+  const [isDraftRestored, setIsDraftRestored] = useState(false);
   const [addressForm, setAddressForm] = useState({
     name: '', phone: '', addressLine1: '', addressLine2: '',
     city: '', state: 'Tamil Nadu', pincode: '', country: 'India',
@@ -69,7 +70,47 @@ export default function CheckoutPage() {
   const [couponCode, setCouponCode] = useState(storeAppliedCoupon?.code || '');
   const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discount: number } | null>(storeAppliedCoupon || null);
 
-  useEffect(() => { setMounted(true); }, []);
+  // Restore draft on mount if available
+  useEffect(() => { 
+    setMounted(true); 
+    if (typeof window !== 'undefined') {
+      try {
+        const savedDraft = localStorage.getItem('orchid_checkout_address_draft');
+        if (savedDraft) {
+          const parsed = JSON.parse(savedDraft);
+          if (parsed && typeof parsed === 'object') {
+            setAddressForm(prev => ({ ...prev, ...parsed }));
+            const hasData = Object.values(parsed).some(
+              v => typeof v === 'string' && v.trim().length > 0 && v !== 'Tamil Nadu' && v !== 'India'
+            );
+            if (hasData) {
+              setIsDraftRestored(true);
+            }
+          }
+        }
+      } catch (e) {
+        // Ignore json parse error
+      }
+    }
+  }, []);
+
+  // Auto-save form draft to localStorage as user types
+  useEffect(() => {
+    if (mounted && typeof window !== 'undefined') {
+      try {
+        const hasUserInput = Boolean(
+          addressForm.name || addressForm.phone || 
+          addressForm.addressLine1 || addressForm.addressLine2 || 
+          addressForm.city || addressForm.pincode
+        );
+        if (hasUserInput) {
+          localStorage.setItem('orchid_checkout_address_draft', JSON.stringify(addressForm));
+        }
+      } catch (e) {
+        // Ignore storage write error
+      }
+    }
+  }, [addressForm, mounted]);
 
   // Fetch saved addresses for the authenticated user or guest
   useEffect(() => {
@@ -77,10 +118,14 @@ export default function CheckoutPage() {
       addressApi.list(activeUserId, user?.id ? guestId : undefined)
         .then(res => {
           setSavedAddresses(res.data);
+          const hasDraft = typeof window !== 'undefined' && Boolean(localStorage.getItem('orchid_checkout_address_draft'));
           const def = res.data.find(a => a.isDefault);
           if (def) setSelectedAddressId(def.id);
           else if (res.data.length > 0) setSelectedAddressId(res.data[0].id);
-          else setShowAddressForm(true);
+
+          if (res.data.length === 0 || hasDraft) {
+            setShowAddressForm(true);
+          }
         })
         .catch(err => console.error('Error loading addresses:', err));
     }
@@ -131,6 +176,10 @@ export default function CheckoutPage() {
       setSelectedAddressId(res.data.id);
       setShowAddressForm(false);
       setCurrentStep(2);
+      setIsDraftRestored(false);
+      try {
+        localStorage.removeItem('orchid_checkout_address_draft');
+      } catch (e) {}
     } catch (err: any) {
       setError(err.message || 'Failed to save address');
     } finally {
@@ -217,6 +266,9 @@ export default function CheckoutPage() {
             // for UX and let the webhook handle the DB reconciliation.
           } finally {
             clearCart();
+            try {
+              localStorage.removeItem('orchid_checkout_address_draft');
+            } catch (e) {}
             window.location.href = `/order-success?orderId=${dbOrder.id}`;
           }
         },
@@ -264,7 +316,14 @@ export default function CheckoutPage() {
           {/* STEP 1: ADDRESS */}
           {currentStep === 1 && (
             <div className="bg-white border border-border rounded-xl p-6 animate-fade-in space-y-6">
-              <h2 className="text-lg font-semibold">Shipping Address</h2>
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold">Shipping Address</h2>
+                {isDraftRestored && (
+                  <span className="text-[11px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-xs">
+                    <Check size={12} className="text-emerald-600" /> Draft restored
+                  </span>
+                )}
+              </div>
               
               {!showAddressForm && savedAddresses.length > 0 && (
                 <div className="space-y-3">
@@ -283,6 +342,8 @@ export default function CheckoutPage() {
                       name: '', phone: '', addressLine1: '', addressLine2: '',
                       city: '', state: 'Tamil Nadu', pincode: '', country: 'India',
                     });
+                    try { localStorage.removeItem('orchid_checkout_address_draft'); } catch(e) {}
+                    setIsDraftRestored(false);
                     setShowAddressForm(true);
                   }} className="flex items-center gap-2 text-sm text-primary font-medium p-2 hover:bg-primary/5 rounded-lg transition-colors">
                     <Plus size={16} /> Add New Address
@@ -325,7 +386,19 @@ export default function CheckoutPage() {
                   </div>
                   <div className="md:col-span-2 flex flex-col gap-2 pt-2">
                     <div className="flex gap-3">
-                      {savedAddresses.length > 0 && <button type="button" onClick={() => setShowAddressForm(false)} className="flex-1 py-3.5 border border-border rounded-full font-medium">Cancel</button>}
+                      {savedAddresses.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowAddressForm(false);
+                            try { localStorage.removeItem('orchid_checkout_address_draft'); } catch(e) {}
+                            setIsDraftRestored(false);
+                          }}
+                          className="flex-1 py-3.5 border border-border rounded-full font-medium"
+                        >
+                          Cancel
+                        </button>
+                      )}
                       <button type="button" onClick={handleSaveAddress} disabled={!isFormValid || loading} className={cn('flex-1 py-3.5 rounded-full font-semibold transition-colors', isFormValid ? 'bg-primary text-white hover:bg-primary-dark cursor-pointer' : 'bg-gray-200 text-gray-400 cursor-not-allowed')}>
                         {loading ? 'Saving...' : 'Save & Continue'}
                       </button>
