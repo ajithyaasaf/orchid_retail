@@ -16,10 +16,10 @@ const STEPS = [
 ];
 
 const INDIAN_STATES = [
-  'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh', 'Goa', 'Gujarat', 'Haryana', 
-  'Himachal Pradesh', 'Jharkhand', 'Karnataka', 'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur', 
-  'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 
-  'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal', 'Andaman and Nicobar Islands', 'Chandigarh', 
+  'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh', 'Goa', 'Gujarat', 'Haryana',
+  'Himachal Pradesh', 'Jharkhand', 'Karnataka', 'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur',
+  'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana',
+  'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal', 'Andaman and Nicobar Islands', 'Chandigarh',
   'Dadra and Nagar Haveli and Daman and Diu', 'Delhi', 'Jammu and Kashmir', 'Ladakh', 'Lakshadweep', 'Puducherry'
 ];
 
@@ -49,12 +49,12 @@ export default function CheckoutPage() {
   const clearCart = useCartStore(s => s.clearCart);
   const storeAppliedCoupon = useCartStore(s => s.appliedCoupon);
   const setStoreAppliedCoupon = useCartStore(s => s.setAppliedCoupon);
-  
+
   const [mounted, setMounted] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  
+
   // Address State
   const [savedAddresses, setSavedAddresses] = useState<AddressData[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
@@ -71,8 +71,8 @@ export default function CheckoutPage() {
   const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discount: number } | null>(storeAppliedCoupon || null);
 
   // Restore draft on mount if available
-  useEffect(() => { 
-    setMounted(true); 
+  useEffect(() => {
+    setMounted(true);
     if (typeof window !== 'undefined') {
       try {
         const savedDraft = localStorage.getItem('orchid_checkout_address_draft');
@@ -99,8 +99,8 @@ export default function CheckoutPage() {
     if (mounted && typeof window !== 'undefined') {
       try {
         const hasUserInput = Boolean(
-          addressForm.name || addressForm.phone || 
-          addressForm.addressLine1 || addressForm.addressLine2 || 
+          addressForm.name || addressForm.phone ||
+          addressForm.addressLine1 || addressForm.addressLine2 ||
           addressForm.city || addressForm.pincode
         );
         if (hasUserInput) {
@@ -179,7 +179,7 @@ export default function CheckoutPage() {
       setIsDraftRestored(false);
       try {
         localStorage.removeItem('orchid_checkout_address_draft');
-      } catch (e) {}
+      } catch (e) { }
     } catch (err: any) {
       setError(err.message || 'Failed to save address');
     } finally {
@@ -268,7 +268,7 @@ export default function CheckoutPage() {
             clearCart();
             try {
               localStorage.removeItem('orchid_checkout_address_draft');
-            } catch (e) {}
+            } catch (e) { }
             window.location.href = `/order-success?orderId=${dbOrder.id}`;
           }
         },
@@ -324,7 +324,7 @@ export default function CheckoutPage() {
                   </span>
                 )}
               </div>
-              
+
               {!showAddressForm && savedAddresses.length > 0 && (
                 <div className="space-y-3">
                   {savedAddresses.map(a => (
@@ -342,7 +342,7 @@ export default function CheckoutPage() {
                       name: '', phone: '', addressLine1: '', addressLine2: '',
                       city: '', state: 'Tamil Nadu', pincode: '', country: 'India',
                     });
-                    try { localStorage.removeItem('orchid_checkout_address_draft'); } catch(e) {}
+                    try { localStorage.removeItem('orchid_checkout_address_draft'); } catch (e) { }
                     setIsDraftRestored(false);
                     setShowAddressForm(true);
                   }} className="flex items-center gap-2 text-sm text-primary font-medium p-2 hover:bg-primary/5 rounded-lg transition-colors">
@@ -356,33 +356,33 @@ export default function CheckoutPage() {
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="md:col-span-1">
                     <label className="text-xs font-medium text-muted mb-1.5 block">Full Name *</label>
-                    <input type="text" value={addressForm.name} onChange={e => setAddressForm({...addressForm, name: e.target.value})} className="w-full px-4 py-3 border border-border rounded-lg text-sm" placeholder="John Doe" />
+                    <input type="text" value={addressForm.name} onChange={e => setAddressForm({ ...addressForm, name: e.target.value })} className="w-full px-4 py-3 border border-border rounded-lg text-sm" placeholder="John Doe" />
                   </div>
                   <div className="md:col-span-1">
                     <label className="text-xs font-medium text-muted mb-1.5 block">Phone (10-digit) *</label>
-                    <input type="tel" value={addressForm.phone} onChange={e => setAddressForm({...addressForm, phone: e.target.value.replace(/\D/g, '').slice(0,10)})} className="w-full px-4 py-3 border border-border rounded-lg text-sm" placeholder="9876543210" />
+                    <input type="tel" value={addressForm.phone} onChange={e => setAddressForm({ ...addressForm, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })} className="w-full px-4 py-3 border border-border rounded-lg text-sm" placeholder="9876543210" />
                   </div>
-                  <div className="md:col-span-2">
+                  <div className="md:col-span-2">,
                     <label className="text-xs font-medium text-muted mb-1.5 block">Address Line 1 *</label>
-                    <input type="text" value={addressForm.addressLine1} onChange={e => setAddressForm({...addressForm, addressLine1: e.target.value})} className="w-full px-4 py-3 border border-border rounded-lg text-sm" placeholder="House/Flat No, Street" />
+                    <input type="text" value={addressForm.addressLine1} onChange={e => setAddressForm({ ...addressForm, addressLine1: e.target.value })} className="w-full px-4 py-3 border border-border rounded-lg text-sm" placeholder="House/Flat No, Street" />
                   </div>
                   <div className="md:col-span-2">
                     <label className="text-xs font-medium text-muted mb-1.5 block">Address Line 2 (Optional)</label>
-                    <input type="text" value={addressForm.addressLine2} onChange={e => setAddressForm({...addressForm, addressLine2: e.target.value})} className="w-full px-4 py-3 border border-border rounded-lg text-sm" placeholder="Landmark, Area" />
+                    <input type="text" value={addressForm.addressLine2} onChange={e => setAddressForm({ ...addressForm, addressLine2: e.target.value })} className="w-full px-4 py-3 border border-border rounded-lg text-sm" placeholder="Landmark, Area" />
                   </div>
                   <div>
                     <label className="text-xs font-medium text-muted mb-1.5 block">City *</label>
-                    <input type="text" value={addressForm.city} onChange={e => setAddressForm({...addressForm, city: e.target.value})} className="w-full px-4 py-3 border border-border rounded-lg text-sm" />
+                    <input type="text" value={addressForm.city} onChange={e => setAddressForm({ ...addressForm, city: e.target.value })} className="w-full px-4 py-3 border border-border rounded-lg text-sm" />
                   </div>
                   <div>
                     <label className="text-xs font-medium text-muted mb-1.5 block">State *</label>
-                    <select value={addressForm.state} onChange={e => setAddressForm({...addressForm, state: e.target.value})} className="w-full px-4 py-3 border border-border rounded-lg text-sm bg-white">
+                    <select value={addressForm.state} onChange={e => setAddressForm({ ...addressForm, state: e.target.value })} className="w-full px-4 py-3 border border-border rounded-lg text-sm bg-white">
                       {INDIAN_STATES.map(s => <option key={s} value={s}>{s}</option>)}
                     </select>
                   </div>
                   <div>
                     <label className="text-xs font-medium text-muted mb-1.5 block">Pincode *</label>
-                    <input type="text" value={addressForm.pincode} onChange={e => setAddressForm({...addressForm, pincode: e.target.value.replace(/\D/g, '').slice(0,6)})} className="w-full px-4 py-3 border border-border rounded-lg text-sm" placeholder="600001" />
+                    <input type="text" value={addressForm.pincode} onChange={e => setAddressForm({ ...addressForm, pincode: e.target.value.replace(/\D/g, '').slice(0, 6) })} className="w-full px-4 py-3 border border-border rounded-lg text-sm" placeholder="600001" />
                   </div>
                   <div className="md:col-span-2 flex gap-3 pt-2">
                     {savedAddresses.length > 0 && (
@@ -390,7 +390,7 @@ export default function CheckoutPage() {
                         type="button"
                         onClick={() => {
                           setShowAddressForm(false);
-                          try { localStorage.removeItem('orchid_checkout_address_draft'); } catch(e) {}
+                          try { localStorage.removeItem('orchid_checkout_address_draft'); } catch (e) { }
                           setIsDraftRestored(false);
                         }}
                         className="flex-1 py-3.5 border border-border rounded-full font-medium"
@@ -432,7 +432,7 @@ export default function CheckoutPage() {
                   <p className="text-3xl font-bold text-primary">{formatPrice(total)}</p>
                 </div>
               </div>
-              
+
               <div className="flex gap-3">
                 <button onClick={() => setCurrentStep(1)} className="flex-1 py-3.5 border border-border rounded-full font-medium">Back</button>
                 <button onClick={handlePlaceOrder} disabled={loading} className="flex-1 py-3.5 bg-primary text-white rounded-full font-semibold flex items-center justify-center gap-2">
