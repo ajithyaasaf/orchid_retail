@@ -91,12 +91,12 @@ export default function AddressesPage() {
   const isFormValid = () => {
     const cleanPhone = form.phone.replace(/[\s\-\+]/g, '').replace(/^91/, '');
     return (
-      form.name.length >= 3 &&
+      form.name.trim().length >= 2 &&
       /^\d{10}$/.test(cleanPhone) &&
-      form.addressLine1.length >= 5 &&
-      form.city.length >= 2 &&
-      form.state.length > 0 &&
-      /^[1-9]\d{5}$/.test(form.pincode)
+      form.addressLine1.trim().length >= 3 &&
+      form.city.trim().length >= 2 &&
+      form.state.trim().length > 0 &&
+      /^[1-9]\d{5}$/.test(form.pincode.trim())
     );
   };
 

@@ -107,15 +107,22 @@ export default function CheckoutPage() {
 
   // Address Validation
   const cleanPhone = addressForm.phone.replace(/[\s\-\+]/g, '').replace(/^91/, '');
-  const isFormValid = 
-    addressForm.name.length >= 3 &&
-    /^\d{10}$/.test(cleanPhone) &&
-    addressForm.addressLine1.length >= 5 &&
-    addressForm.city.length >= 2 &&
-    addressForm.state.length > 0 &&
-    /^[1-9]\d{5}$/.test(addressForm.pincode);
+  const isNameValid = addressForm.name.trim().length >= 2;
+  const isPhoneValid = /^\d{10}$/.test(cleanPhone);
+  const isAddress1Valid = addressForm.addressLine1.trim().length >= 3;
+  const isCityValid = addressForm.city.trim().length >= 2;
+  const isStateValid = addressForm.state.trim().length > 0;
+  const isPincodeValid = /^[1-9]\d{5}$/.test(addressForm.pincode.trim());
+
+  const isFormValid = isNameValid && isPhoneValid && isAddress1Valid && isCityValid && isStateValid && isPincodeValid;
 
   const handleSaveAddress = async () => {
+    if (!isNameValid) { setError('Full Name must be at least 2 characters'); return; }
+    if (!isPhoneValid) { setError('Phone must be a valid 10-digit Indian mobile number'); return; }
+    if (!isAddress1Valid) { setError('Address Line 1 must be at least 3 characters'); return; }
+    if (!isCityValid) { setError('City must be at least 2 characters'); return; }
+    if (!isPincodeValid) { setError('Pincode must be a valid 6-digit postal code'); return; }
+
     setLoading(true);
     setError('');
     try {
@@ -316,11 +323,23 @@ export default function CheckoutPage() {
                     <label className="text-xs font-medium text-muted mb-1.5 block">Pincode *</label>
                     <input type="text" value={addressForm.pincode} onChange={e => setAddressForm({...addressForm, pincode: e.target.value.replace(/\D/g, '').slice(0,6)})} className="w-full px-4 py-3 border border-border rounded-lg text-sm" placeholder="600001" />
                   </div>
-                  <div className="md:col-span-2 flex gap-3 pt-2">
-                    {savedAddresses.length > 0 && <button onClick={() => setShowAddressForm(false)} className="flex-1 py-3.5 border border-border rounded-full font-medium">Cancel</button>}
-                    <button onClick={handleSaveAddress} disabled={!isFormValid || loading} className={cn('flex-1 py-3.5 rounded-full font-semibold transition-colors', isFormValid ? 'bg-primary text-white' : 'bg-gray-200 text-gray-400')}>
-                      {loading ? 'Saving...' : 'Save & Continue'}
-                    </button>
+                  <div className="md:col-span-2 flex flex-col gap-2 pt-2">
+                    <div className="flex gap-3">
+                      {savedAddresses.length > 0 && <button type="button" onClick={() => setShowAddressForm(false)} className="flex-1 py-3.5 border border-border rounded-full font-medium">Cancel</button>}
+                      <button type="button" onClick={handleSaveAddress} disabled={!isFormValid || loading} className={cn('flex-1 py-3.5 rounded-full font-semibold transition-colors', isFormValid ? 'bg-primary text-white hover:bg-primary-dark cursor-pointer' : 'bg-gray-200 text-gray-400 cursor-not-allowed')}>
+                        {loading ? 'Saving...' : 'Save & Continue'}
+                      </button>
+                    </div>
+                    {!isFormValid && (
+                      <div className="text-[11px] text-amber-600 bg-amber-50 border border-amber-200/60 rounded-lg p-2.5 flex flex-wrap items-center gap-x-3 gap-y-1">
+                        <span className="font-semibold text-amber-700">Please complete:</span>
+                        {!isNameValid && <span>• Name (min 2 chars)</span>}
+                        {!isPhoneValid && <span>• Phone (10 digits)</span>}
+                        {!isAddress1Valid && <span>• Address Line 1 (min 3 chars)</span>}
+                        {!isCityValid && <span>• City</span>}
+                        {!isPincodeValid && <span>• Pincode (6 digits)</span>}
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
